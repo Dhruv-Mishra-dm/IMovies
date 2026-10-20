@@ -7,6 +7,9 @@ import { renderApp, ok, fail } from '../test/renderApp.jsx'
 import SeatMap from '../components/showtimes/SeatMap.jsx'
 
 vi.mock('../api/auth.js', () => ({ getMe: vi.fn(), login: vi.fn(), register: vi.fn(), logout: vi.fn(), logoutAll: vi.fn() }))
+vi.mock('../api/bookings.js', () => ({
+  getSeatAvailability: vi.fn(async () => ({ ok: true, status: 200, kind: 'ok', data: { availability: 'OPEN', seats: {}, myHold: null, serverTime: new Date().toISOString() } })),
+}))
 vi.mock('../api/cinema.js', () => ({
   listCities: vi.fn(),
   listTheatres: vi.fn(),
@@ -131,15 +134,17 @@ describe('theatre pages', () => {
 })
 
 describe('showtime page', () => {
-  it('shows show details, prices and a read-only seat map', async () => {
+  it('shows show details, prices and the seat map once availability is known', async () => {
     cinemaApi.getShowtime.mockResolvedValue(ok({ showtime: { ...show(), seatMap: layout, prices } }))
     renderApp('/showtimes/s1')
     expect(await screen.findByRole('heading', { level: 1, name: /2 Nov, 6:30 PM/ })).toBeInTheDocument()
     expect(screen.getByText('₹450')).toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Seat map' })).toBeInTheDocument()
+    expect(await screen.findByRole('group', { name: 'Seat map' })).toBeInTheDocument()
   })
 
   it('warns when a show is cancelled', async () => {
+    const { getSeatAvailability } = await import('../api/bookings.js')
+    getSeatAvailability.mockResolvedValueOnce(ok({ availability: 'CANCELLED', seats: {}, myHold: null, serverTime: new Date().toISOString() }))
     cinemaApi.getShowtime.mockResolvedValue(ok({ showtime: { ...show({ availability: 'CANCELLED' }), seatMap: layout, prices } }))
     renderApp('/showtimes/s1')
     expect(await screen.findByText('This show has been cancelled.')).toBeInTheDocument()

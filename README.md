@@ -265,6 +265,31 @@ restarts and even `docker compose down`.
 Release dates are IST calendar dates (`"2026-12-25"`). Search is case-insensitive and treats
 special characters literally.
 
+## Booking engine (seat holds)
+
+| Endpoint | Access | Purpose |
+|---|---|---|
+| `GET /api/showtimes/:id/seats` | public (+ your own holds if logged in) | Taken seats: `{ A1: 'booked' \| 'held' \| 'mine' }`, your active hold, `serverTime` |
+| `POST /api/bookings` `{ showtimeId, seatIds }` | customer | Hold up to 10 seats for **10 minutes** → `HELD` booking |
+| `GET /api/bookings/:id` | owner | Booking with `serverTime` (other customers get 404) |
+| `POST /api/bookings/:id/release` | owner | Give the seats back (idempotent) |
+
+How a hold is made safely, in one MongoDB transaction:
+
+1. The show document is "locked" by incrementing its `lockVersion`, which serialises all holds
+   for that show and prevents committing against a show that was cancelled or has started.
+2. Any **expired** holds on the requested seats are expired and freed right there, so an expired
+   hold never blocks anyone, even if the background clean-up hasn't run yet.
+3. The `HELD` booking and one reservation per seat are inserted. The unique index on
+   `(showtime, seatId)` makes a second reservation of the same seat impossible; if any seat is
+   taken, the whole transaction is rolled back (no partial holds) and the API answers
+   `409 SEATS_UNAVAILABLE` with the list of seats.
+
+Prices and the total come from the show's own prices on the server; anything the browser sends
+besides the seat ids is ignored. A customer can have only one active hold per show (enforced by a
+partial unique index, so a double-click can't create two). A background sweeper expires overdue
+holds every 15 seconds for tidiness, but correctness never depends on it.
+
 ## Theatres and showtimes API
 
 | Endpoint | Access | Purpose |

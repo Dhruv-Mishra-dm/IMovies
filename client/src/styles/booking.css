@@ -1,0 +1,89 @@
+/* ---------- Seat selection bar ---------- */
+.has-selection-bar {
+  padding-bottom: 8rem;
+}
+.selection-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  background: var(--surface);
+  border-top: 1px solid var(--border-strong);
+  box-shadow: 0 -10px 30px rgb(0 0 0 / 0.35);
+  padding-block: var(--space-3);
+}
+.selection-bar .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.selection-total {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+}
+
+/* ---------- Checkout ---------- */
+.checkout-grid {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.booking-summary-head {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.booking-summary-head h3 {
+  margin-bottom: var(--space-1);
+}
+.booking-summary-head p {
+  margin-bottom: var(--space-2);
+}
+.booking-summary-poster {
+  border-radius: var(--radius);
+  overflow: hidden;
+  aspect-ratio: 2 / 3;
+}
+.seats-table tfoot th,
+.seats-table tfoot td {
+  border-top: 1px solid var(--border-strong);
+  color: var(--text);
+}
+
+.countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+.countdown-time {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.countdown-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+.countdown.urgent {
+  border-color: var(--danger);
+}
+.countdown.urgent .countdown-time {
+  color: var(--danger);
+}

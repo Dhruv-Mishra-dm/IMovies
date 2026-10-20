@@ -12,6 +12,7 @@ import MovieDetailPage from './pages/MovieDetailPage.jsx'
 import TheatresPage from './pages/TheatresPage.jsx'
 import TheatreDetailPage from './pages/TheatreDetailPage.jsx'
 import ShowtimePage from './pages/ShowtimePage.jsx'
+import CheckoutPage from './pages/CheckoutPage.jsx'
 import { NotFoundPage, StatusPage } from './pages/SimplePages.jsx'
 
 export function AppRoutes() {
@@ -31,6 +32,7 @@ export function AppRoutes() {
         </Route>
         <Route element={<RequireAuth />}>
           <Route path="account" element={<AccountPage />} />
+          <Route path="bookings/:id/checkout" element={<CheckoutPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

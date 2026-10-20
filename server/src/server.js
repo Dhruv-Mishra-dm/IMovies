@@ -3,6 +3,7 @@ import { logger } from './config/logger.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { ensureIndexes } from './models/index.js';
 import { createApp } from './app.js';
+import { startHoldSweeper } from './jobs/holdSweeper.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -22,6 +23,8 @@ async function start() {
     logger.info(`API listening on http://localhost:${env.port} (${env.nodeEnv})`);
   });
 
+  const stopSweeper = startHoldSweeper();
+
   server.on('error', (err) => {
     const hint = err.code === 'EADDRINUSE' ? ` Port ${env.port} is already in use — stop the other process or change PORT.` : '';
     logger.fatal({ err }, `HTTP server error.${hint}`);
@@ -33,6 +36,7 @@ async function start() {
     if (shuttingDown) return;
     shuttingDown = true;
     logger.info(`${signal} received, shutting down...`);
+    stopSweeper();
 
     // If open connections keep the server alive too long, exit anyway.
     setTimeout(() => {

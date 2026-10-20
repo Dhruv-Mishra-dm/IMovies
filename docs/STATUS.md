@@ -8,9 +8,9 @@ Only features whose acceptance criteria are verified are marked **Done**.
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Last completed epic | Epic 5 — theatres, screens and show scheduling |
-| Current epic | Epic 6 — seat inventory and booking engine |
-| Next steps | `GET /api/showtimes/:id/seats`, `POST /api/bookings` (transactional hold of seats, 10-min expiry, server-side pricing), release, expiry sweeper; seat selection UI |
+| Last completed epic | Epic 6 — seat inventory and booking engine |
+| Current epic | Epic 7 — payment simulation, confirmation, cancellation and refunds |
+| Next steps | Simulated provider (authorize/capture/void/refund), `POST /api/bookings/:id/payments` with Idempotency-Key, confirm transaction, stale-payment recovery, customer cancellation (≥120 min, full refund), admin showtime cancellation (decision 5); payment UI on checkout; confirmation page |
 
 To resume: `git status`, `git log --oneline -5`, read this file, run the checks in "Latest verified results", continue with the current epic.
 
@@ -23,7 +23,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `6b870e54a719d1abc301711f999fb5f476366089` | Epic 2 — database models and seed data |
 | `d5b27680625badaebd059b8822cce01cf8c07752` | Epic 3 — authentication and authorization |
 | `0c561323caf6b7feb7ad826d278fd25ce1c029e6` | Epic 4 — movie catalogue and search |
-| _(see `git log`)_ | Epic 5 — theatres, screens and show scheduling |
+| `a1dcfe25d2356f29270fefc946f315bab19acb8c` | Epic 5 — theatres, screens and show scheduling |
+| _(see `git log`)_ | Epic 6 — seat inventory and booking engine |
 
 ## Epic overview
 
@@ -33,9 +34,9 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | 2 | Database models and seed data | **Done** (`6b870e5`) |
 | 3 | Authentication and authorization | **Done** (`d5b2768`) |
 | 4 | Movie catalog and search | **Done** (`0c56132`) |
-| 5 | Theatres, screens and show scheduling | **Done** (cancellation → Epic 7) |
-| 6 | Seat inventory and booking engine | In progress |
-| 7 | Payment simulation and booking confirmation | Pending |
+| 5 | Theatres, screens and show scheduling | **Done** (`a1dcfe2`; cancellation → Epic 7) |
+| 6 | Seat inventory and booking engine | **Done** |
+| 7 | Payment simulation and booking confirmation | In progress (also: cancellations, refunds, admin show cancellation) |
 | 8 | Real-time seat availability (Socket.IO) | Pending |
 | 9 | Customer dashboard and booking history | Pending |
 | 10 | Admin dashboard | Pending |
@@ -54,7 +55,34 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
 
-## Epic 5 — theatres, screens and show scheduling (Done)
+## Epic 6 — seat inventory and booking engine (Done)
+
+**Backend.** `services/holdService.js` (`createHold`, `releaseHold`, `getSeatAvailability`, `expireHolds`,
+`sweepExpiredHolds`, `lockOpenShowtime`), `events/bus.js` (domain events published only after commit),
+`jobs/holdSweeper.js` (every 15 s, non-overlapping, multi-instance safe), `utils/reference.js` (crypto-random
+`IMV-XXXXXXXX`), `validators/bookings.js`, `routes/bookings.routes.js`. Booking responses include `serverTime`.
+
+Concurrency design (see README "Booking engine"): showtime `lockVersion` write + lazy expiry + unique
+`(showtime, seatId)` + partial unique one-HELD-per-user-per-show, all in one transaction; duplicate-key failures are
+mapped to `409 SEATS_UNAVAILABLE` (with the taken seats) or `409 HOLD_EXISTS`. Seats are validated against the show's
+own seat-map snapshot (unknown/out-of-service → 400). Admin accounts cannot book (customer-only route).
+
+**Frontend.** Interactive seat selection on the showtime page (max 10, indicative total in a sticky bar, waits for
+login status and availability before showing any seat as free, removes seats taken by others with an explanation,
+keeps the selection across the login redirect via sessionStorage, existing-hold banner with continue/release),
+checkout page (booking snapshot summary, server-clock countdown with polite screen-reader announcements, release with
+confirmation, expired/released states). Payment panel is a clearly labelled "next step" notice until Epic 7.
+
+**Verified.** Server 144 tests (15 new), including **20 customers racing for one seat → exactly 1 hold, 19 × 409, one
+reservation, no orphan bookings**; overlapping multi-seat races → no seat reserved twice and no partial holds;
+double-click → one hold; lazy expiry after 10 min; sweeper once and idempotent; release idempotent; 404 for other
+customers; events only after commit. Client 63 tests (10 new). Browser: selected E7+E8 (₹500), held them, checkout
+showed server summary and 9:58 countdown; a cookie-less second client saw E7/E8 as `held` without identity, the
+owner saw `mine`. Bugs found and fixed: Mongoose subdocument spread lost seat fields (all prices undefined); a
+transaction query ran without its session; seat map briefly showed every seat as free; availability was fetched
+twice while login status loaded.
+
+## Epic 5 — theatres, screens and show scheduling (Done, `a1dcfe2`)
 
 **Backend.** `services/theatreService.js`, `services/showtimeService.js`, `validators/cinema.js` (seat layout schema
 reuses `domain/seatLayout.js`), `routes/cinema.routes.js`. Public: cities, active theatres (+screen counts), theatre
@@ -196,11 +224,11 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 
 | Check | Command | Result |
 |---|---|---|
-| Backend tests | `cd server; npm test` | **129 passed**, 0 failed, 0 skipped |
+| Backend tests | `cd server; npm test` | **144 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
-| Frontend tests | `cd client; npm test` | **53 passed**, 0 failed |
+| Frontend tests | `cd client; npm test` | **63 passed**, 0 failed |
 | Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
-| Browser check | Chrome via browser integration | Epics 3–5 flows verified; mobile width not verified |
+| Browser check | Chrome via browser integration | Epics 3–6 flows verified; mobile width not verified |
 
 ## Architectural decisions
 

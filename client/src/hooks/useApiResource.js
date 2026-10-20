@@ -9,13 +9,15 @@ import { useCallback, useEffect, useState } from 'react'
  * - `result` is the apiRequest() result for the CURRENT key (null while loading).
  * - `previous` is the last finished result, handy to keep showing old data while new data loads.
  * - Requests for an outdated key are aborted, so a slow old response can never overwrite a newer one.
+ * - Pass `key = null` to wait (nothing is fetched and `loading` stays true), e.g. until login status is known.
  */
 export function useApiResource(fetcher, key) {
   const [reloadCount, setReloadCount] = useState(0)
-  const requestKey = `${key}#${reloadCount}`
+  const requestKey = key === null ? null : `${key}#${reloadCount}`
   const [settled, setSettled] = useState({ key: null, value: null })
 
   useEffect(() => {
+    if (requestKey === null) return undefined
     const controller = new AbortController()
     fetcher(controller.signal).then(
       (value) => setSettled({ key: requestKey, value }),
@@ -27,6 +29,6 @@ export function useApiResource(fetcher, key) {
   }, [requestKey])
 
   const reload = useCallback(() => setReloadCount((n) => n + 1), [])
-  const loading = settled.key !== requestKey
+  const loading = requestKey === null || settled.key !== requestKey
   return { loading, result: loading ? null : settled.value, previous: settled.value, reload }
 }
