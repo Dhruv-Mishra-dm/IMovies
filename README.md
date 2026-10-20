@@ -63,7 +63,16 @@ cd ..
 cd client
 npm install
 cd ..
+
+# 6. (Optional, recommended) Add demo movies, theatres and the next 7 days of showtimes
+cd server
+npm run seed
+cd ..
 ```
+
+The seed only **adds** missing demo records (all fictional) and never overwrites anything,
+so it is safe to run again — for example every few days to add new upcoming showtimes.
+It refuses to run when `NODE_ENV=production` and never runs automatically.
 
 `.env` holds your local settings and is ignored by Git. The defaults in
 `.env.example` work as-is for local development.

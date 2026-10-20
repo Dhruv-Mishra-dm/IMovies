@@ -9,7 +9,7 @@
   },
   "overrides": [
     {
-      "files": ["src/config/env.js"],
+      "files": ["src/config/env.js", "scripts/**"],
       "rules": { "no-console": "off" }
     }
   ]

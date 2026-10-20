@@ -1,6 +1,7 @@
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { connectDB, disconnectDB } from './config/db.js';
+import { ensureIndexes } from './models/index.js';
 import { createApp } from './app.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -9,6 +10,8 @@ async function start() {
   try {
     const conn = await connectDB(env.mongodbUri);
     logger.info({ db: `${conn.host}:${conn.port}/${conn.name}` }, 'MongoDB connected');
+    await ensureIndexes();
+    logger.info('Database indexes verified');
   } catch (err) {
     logger.fatal({ reason: err.message }, 'Could not connect to MongoDB. Is Docker Desktop running? Try: docker compose up -d');
     process.exit(1);

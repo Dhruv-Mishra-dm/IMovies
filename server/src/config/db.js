@@ -5,6 +5,10 @@ mongoose.set('strictQuery', true);
 // By default Mongoose queues queries for up to 10s while disconnected. We'd rather fail fast
 // (the error handler turns it into a 500 and /api/health reports 503) than hang requests.
 mongoose.set('bufferCommands', false);
+// Indexes are created explicitly by models/index.js ensureIndexes() before the server accepts requests,
+// instead of Mongoose building them in the background where a request could race ahead of them.
+mongoose.set('autoIndex', false);
+mongoose.set('autoCreate', false);
 
 const HEALTH_PROBE_TIMEOUT_MS = 2000;
 

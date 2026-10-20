@@ -12,7 +12,8 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "node --import ./tests/setup-env.js --test --test-concurrency=1 \"tests/**/*.test.js\"",
-    "lint": "oxlint"
+    "lint": "oxlint",
+    "seed": "node scripts/seed.js"
   },
   "dependencies": {
     "cors": "^2.8.6",
