@@ -1,0 +1,24 @@
+# Dependencies (re-created by `npm install`)
+node_modules/
+
+# Environment files hold secrets — NEVER commit them.
+# Only the *.env.example templates are committed.
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS clutter
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

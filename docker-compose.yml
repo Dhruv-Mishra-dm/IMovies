@@ -1,0 +1,41 @@
+# Local development database for IMovies.
+# Start:  docker compose up -d
+# Stop:   docker compose stop        (data is kept)
+# Wipe:   docker compose down -v     (DELETES all data in the volume)
+
+services:
+  mongo:
+    image: mongo:8.0
+    container_name: imovies-mongo
+    # --replSet turns this into a one-member "replica set", which MongoDB
+    # requires before it will allow multi-document transactions.
+    # --bind_ip_all only applies INSIDE the container; what the outside world
+    # can reach is controlled by `ports` below.
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      # "127.0.0.1:" means only this computer can connect — not your Wi-Fi network.
+      - "127.0.0.1:27017:27017"
+    volumes:
+      # Named volume: the data survives container restarts and re-creation.
+      - imovies-mongo-data:/data/db
+      # The mongo image also declares /data/configdb; naming it stops Docker
+      # from creating a new anonymous volume every time the container is re-created.
+      - imovies-mongo-config:/data/configdb
+    healthcheck:
+      # First run: the replica set isn't set up yet, so rs.status() throws and we
+      # call rs.initiate() and report "not healthy yet". Later runs report healthy.
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "try { rs.status(); quit(0) } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: '127.0.0.1:27017' }] }); quit(1) }"
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  imovies-mongo-data:
+  imovies-mongo-config:
