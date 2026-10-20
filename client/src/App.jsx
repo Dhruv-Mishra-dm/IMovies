@@ -7,6 +7,8 @@ import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import AccountPage from './pages/AccountPage.jsx'
+import MoviesPage from './pages/MoviesPage.jsx'
+import MovieDetailPage from './pages/MovieDetailPage.jsx'
 import { NotFoundPage, StatusPage } from './pages/SimplePages.jsx'
 
 export function AppRoutes() {
@@ -15,6 +17,8 @@ export function AppRoutes() {
       <Route element={<AppLayout />}>
         <Route index element={<HomePage />} />
         <Route path="status" element={<StatusPage />} />
+        <Route path="movies" element={<MoviesPage />} />
+        <Route path="movies/:slug" element={<MovieDetailPage />} />
         <Route element={<GuestOnly />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />

@@ -8,7 +8,10 @@ import Button from '../ui/Button.jsx'
 const linkClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`
 
 /** Links shown in the main navigation. Only routes that exist are listed (no dead links). */
-const PRIMARY_LINKS = [{ to: '/', label: 'Home', end: true }]
+const PRIMARY_LINKS = [
+  { to: '/', label: 'Home', end: true },
+  { to: '/movies', label: 'Movies' },
+]
 
 export default function SiteHeader() {
   const { status, user, logout } = useAuth()

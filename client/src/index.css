@@ -3,6 +3,7 @@
 @import './styles/base.css';
 @import './styles/components.css';
 @import './styles/layout.css';
+@import './styles/movies.css';
 
 /* ---------- System status (from Epic 0, now at /status) ---------- */
 .status {

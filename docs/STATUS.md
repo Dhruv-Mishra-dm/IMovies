@@ -8,9 +8,9 @@ Only features whose acceptance criteria are verified are marked **Done**.
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Last completed epic | Epic 3 — authentication and authorization |
-| Current epic | Epic 4 — movie catalogue and search |
-| Next steps | Public movie API (list/search/filter/paginate/detail) + admin movie CRUD/publish/archive; Home + Movies + Movie detail pages |
+| Last completed epic | Epic 4 — movie catalogue and search |
+| Current epic | Epic 5 — theatres, screens and show scheduling |
+| Next steps | Theatre/screen/showtime public API (filter by movie, city, date, theatre) + admin CRUD with transactional overlap check and showtime cancellation skeleton; showtime picker on movie detail; Theatres pages |
 
 To resume: `git status`, `git log --oneline -5`, read this file, run the checks in "Latest verified results", continue with the current epic.
 
@@ -21,7 +21,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `c5b46e26b0e07760f9e1b983c41bcde506d99b63` | Epic 0 — project foundation (baseline) |
 | `1c1b4c0467b4deac179e529579a7b83212e66291` | Epic 1 — hardened project foundation |
 | `6b870e54a719d1abc301711f999fb5f476366089` | Epic 2 — database models and seed data |
-| _(see `git log`)_ | Epic 3 — authentication and authorization |
+| `d5b27680625badaebd059b8822cce01cf8c07752` | Epic 3 — authentication and authorization |
+| _(see `git log`)_ | Epic 4 — movie catalogue and search |
 
 ## Epic overview
 
@@ -29,9 +30,9 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 |---|---|---|
 | 1 | Repository assessment and project foundation | **Done** (`1c1b4c0`) |
 | 2 | Database models and seed data | **Done** (`6b870e5`) |
-| 3 | Authentication and authorization | **Done** |
-| 4 | Movie catalog and search | In progress |
-| 5 | Theatres, screens and show scheduling | Pending |
+| 3 | Authentication and authorization | **Done** (`d5b2768`) |
+| 4 | Movie catalog and search | **Done** |
+| 5 | Theatres, screens and show scheduling | In progress |
 | 6 | Seat inventory and booking engine | Pending |
 | 7 | Payment simulation and booking confirmation | Pending |
 | 8 | Real-time seat availability (Socket.IO) | Pending |
@@ -52,7 +53,30 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
 
-## Epic 3 — authentication and authorization (Done)
+## Epic 4 — movie catalogue and search (Done)
+
+**Backend.** `services/movieService.js`, `validators/movies.js`, `routes/movies.routes.js`; `utils/query.js`
+(escaped regex search, pagination), `services/auditService.js` (admin actions → `auditlogs` + log line).
+Public: published movies only; release status computed from the server clock; drafts/archived → 404 like missing
+movies. Admin (`/api/admin/movies`, `requireAdmin` on the whole router): create always as DRAFT (status in the body is
+ignored), auto-unique slugs, PATCH whitelist, publish/archive via the state machine with conditional updates, archive
+refused while upcoming SCHEDULED showtimes exist, delete only never-scheduled drafts. Editing duration affects only
+future scheduling (existing showtimes keep their times; bookings keep their snapshot).
+
+**Frontend.** Home (featured now-showing hero, Now showing / Coming soon rows), Movies (search debounced 300 ms,
+genre/language selects, release segmented control, sort, pagination — all in the URL; old results stay visible while
+loading; empty state with "Clear filters"; error state with retry), Movie detail (backdrop, poster, facts, languages,
+trailer link with `noopener noreferrer`, synopsis, credits; 404 state). `useApiResource` hook (abort on change, stale
+responses ignored), `utils/format.js` (IST dates/times, INR from paise).
+
+**Verified.** Server 114 tests (16 new). Client 45 tests (10 new). Browser: home hero and grids with the original SVG
+posters, catalogue search ("light" → 2 results, URL updated), Back-button sync of the search box, detail page, console
+clean. Defects found and fixed during the epic: money formatted as "₹250.5" (now "₹250.50"); search box could re-apply
+a stale search after Back; trailer link was a click handler instead of a real link. Note: in development React
+StrictMode mounts twice, so each first request is aborted — the browser tool lists these as "503"; the API log shows
+only 200/304 and "request aborted".
+
+## Epic 3 — authentication and authorization (Done, `d5b2768`)
 
 **Backend.** `services/authService.js` (register, login, rotate, logout, revoke-all, change password),
 `services/tokenService.js` (HS256 JWT with issuer/audience, algorithm pinned; refresh token = 256 random bits,
@@ -144,11 +168,11 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 
 | Check | Command | Result |
 |---|---|---|
-| Backend tests | `cd server; npm test` | **98 passed**, 0 failed, 0 skipped |
+| Backend tests | `cd server; npm test` | **114 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
-| Frontend tests | `cd client; npm test` | **35 passed**, 0 failed |
+| Frontend tests | `cd client; npm test` | **45 passed**, 0 failed |
 | Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
-| Browser check | Chrome via browser integration | Auth flows verified (see Epic 3); mobile width not verified |
+| Browser check | Chrome via browser integration | Auth (Epic 3) and catalogue (Epic 4) flows verified; mobile width not verified |
 
 ## Architectural decisions
 

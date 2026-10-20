@@ -38,6 +38,18 @@ export async function registeredCustomer(app, overrides = {}) {
   return { client, user: res.body.user, email: body.email };
 }
 
+/** Creates an administrator directly in the database and returns a logged-in client for it. */
+export async function adminClient(app) {
+  const { User } = await import('../../src/models/index.js');
+  const { hashPassword } = await import('../../src/services/authService.js');
+  const email = uniqueEmail('admin');
+  const user = await User.create({ name: 'Admin', email, passwordHash: await hashPassword(PASSWORD), role: 'admin' });
+  const client = browser(app);
+  const res = await client.post('/api/auth/login', { email, password: PASSWORD });
+  if (res.status !== 200) throw new Error(`admin login failed: ${res.status}`);
+  return { client, user };
+}
+
 /** Parses Set-Cookie headers into { name: { value, attributes } } for assertions. */
 export function parseSetCookies(res) {
   const result = {};

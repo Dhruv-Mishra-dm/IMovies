@@ -1,0 +1,211 @@
+/* ---------- Movie grid & cards ---------- */
+.movie-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-5) var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 42vw), 1fr));
+}
+.movie-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius);
+}
+.movie-card-link:hover {
+  color: inherit;
+}
+.movie-card-poster {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-2);
+  aspect-ratio: 2 / 3;
+}
+.poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 200ms ease;
+}
+.movie-card-link:hover .poster,
+.movie-card-link:focus-visible .poster {
+  transform: scale(1.03);
+}
+.cert-badge {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  background: rgb(13 14 18 / 0.8);
+  color: var(--text);
+}
+.movie-card-body {
+  padding-top: var(--space-3);
+}
+.movie-card-title {
+  font-size: var(--text-lg);
+  margin: 0 0 var(--space-1);
+}
+.movie-card-meta {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* ---------- Catalogue toolbar ---------- */
+.toolbar {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(12rem, 2fr) repeat(3, minmax(9rem, 1fr));
+  align-items: end;
+  margin-bottom: var(--space-5);
+}
+@media (max-width: 760px) {
+  .toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+  .toolbar .field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: var(--space-4);
+}
+.segmented button {
+  min-height: 2.25rem;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.segmented button[aria-pressed='true'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.result-summary {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-4);
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  color: var(--text-muted);
+}
+.is-refreshing {
+  opacity: 0.6;
+  transition: opacity 150ms;
+}
+
+/* ---------- Hero (home) ---------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+  background-size: cover;
+  background-position: center;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(13 14 18 / 0.96) 0%, rgb(13 14 18 / 0.85) 45%, rgb(13 14 18 / 0.35) 100%);
+}
+.hero .container {
+  position: relative;
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: minmax(0, 1fr) 13rem;
+  align-items: center;
+  padding-block: var(--space-7);
+}
+.hero-eyebrow {
+  color: var(--accent);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-2);
+}
+.hero-synopsis {
+  max-width: 38rem;
+  color: var(--text-muted);
+}
+.hero-poster {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 760px) {
+  .hero .container {
+    grid-template-columns: 1fr;
+  }
+  .hero-poster {
+    display: none;
+  }
+}
+.section {
+  margin-top: var(--space-7);
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.section-header h2 {
+  margin: 0;
+}
+
+/* ---------- Movie detail ---------- */
+.movie-hero .container {
+  grid-template-columns: 14rem minmax(0, 1fr);
+}
+.movie-hero .hero-poster {
+  display: block;
+}
+@media (max-width: 760px) {
+  .movie-hero .container {
+    grid-template-columns: 8rem minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+  }
+}
+.movie-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+}
+.chip {
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: var(--surface-3);
+  font-size: var(--text-sm);
+}

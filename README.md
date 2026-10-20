@@ -249,3 +249,18 @@ restarts and even `docker compose down`.
 | `POST /api/auth/logout-all` | logged in | End every session |
 | `GET /api/auth/me` · `PATCH /api/auth/me` | logged in | Read / rename the current user |
 | `POST /api/auth/change-password` | logged in | Change password (ends other sessions) |
+
+## Movie catalogue API
+
+| Endpoint | Access | Purpose |
+|---|---|---|
+| `GET /api/movies?q=&genre=&language=&release=all\|now-showing\|coming-soon&sort=release-desc\|release-asc\|title&page=&pageSize=` | public | Published movies, paginated (`{ items, page, pageSize, total, totalPages }`) |
+| `GET /api/movies/filters` | public | Genres and languages present in the catalogue |
+| `GET /api/movies/:idOrSlug` | public | One published movie (drafts/archived → 404) |
+| `GET /api/admin/movies?q=&status=` · `GET /api/admin/movies/:id` | admin | All movies, any status |
+| `POST /api/admin/movies` · `PATCH /api/admin/movies/:id` | admin | Create (always as `DRAFT`) / edit |
+| `POST /api/admin/movies/:id/publish` · `.../archive` | admin | Status changes (archive refused while upcoming shows exist) |
+| `DELETE /api/admin/movies/:id` | admin | Only never-scheduled drafts; otherwise archive |
+
+Release dates are IST calendar dates (`"2026-12-25"`). Search is case-insensitive and treats
+special characters literally.

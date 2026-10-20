@@ -5,6 +5,11 @@ import * as authApi from '../api/auth.js'
 import { renderApp, customer, admin, ok, fail } from '../test/renderApp.jsx'
 import { safeNextPath } from '../utils/navigation.js'
 
+vi.mock('../api/movies.js', () => {
+  const empty = { ok: true, status: 200, kind: 'ok', data: { items: [], page: 1, pageSize: 8, total: 0, totalPages: 1, genres: [], languages: [] } }
+  return { listMovies: vi.fn(async () => empty), getMovieFilters: vi.fn(async () => empty), getMovie: vi.fn() }
+})
+
 vi.mock('../api/auth.js', () => ({
   getMe: vi.fn(),
   login: vi.fn(),
@@ -111,7 +116,8 @@ describe('registration page', () => {
     await userEvent.type(screen.getByLabelText('Confirm password'), 'secret123')
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }))
     await waitFor(() => expect(location()).toBe('/'))
-    expect(await screen.findByText('Signed in as Asha Rao.')).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: 'Main' })
+    expect(await within(nav).findByText('Asha')).toBeInTheDocument()
   })
 })
 
