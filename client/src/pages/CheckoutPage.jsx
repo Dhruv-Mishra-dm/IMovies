@@ -6,8 +6,8 @@ import { errorMessage } from '../api/client.js'
 import { useApiResource } from '../hooks/useApiResource.js'
 import HoldCountdown from '../components/bookings/HoldCountdown.jsx'
 import BookingSummary from '../components/bookings/BookingSummary.jsx'
+import DemoPaymentPanel from '../components/bookings/DemoPaymentPanel.jsx'
 import Button from '../components/ui/Button.jsx'
-import Alert from '../components/ui/Alert.jsx'
 import ConfirmDialog from '../components/ui/ConfirmDialog.jsx'
 import { PageLoader, ErrorState, EmptyState } from '../components/ui/Feedback.jsx'
 
@@ -34,7 +34,7 @@ export default function CheckoutPage() {
     )
   }
 
-  const { booking, serverTime } = result.data
+  const { booking, payments, serverTime } = result.data
   if (booking.status === 'CONFIRMED') return <Navigate to={`/bookings/${booking.id}`} replace />
   const showtimeLink = `/showtimes/${booking.showtime}`
 
@@ -49,7 +49,7 @@ export default function CheckoutPage() {
             </Button>
           }
         >
-          Seats are held for 10 minutes. Nothing was charged.
+          Seats are held for 10 minutes. You were not charged.
         </EmptyState>
       </div>
     )
@@ -88,14 +88,25 @@ export default function CheckoutPage() {
       </div>
       <div className="checkout-grid">
         <BookingSummary booking={booking} />
-        <section className="card" aria-labelledby="payment-heading">
-          <h2 id="payment-heading">Payment</h2>
-          <Alert type="info">Payment is the next step of this build and is not available yet.</Alert>
-          <div className="cluster" style={{ marginTop: 'var(--space-4)' }}>
+        <div className="stack">
+          <DemoPaymentPanel
+            booking={booking}
+            payments={payments}
+            onPaid={() => {
+              toast.success('Payment successful — enjoy the show!')
+              navigate(`/bookings/${booking.id}?confirmed=1`, { replace: true })
+            }}
+            onHoldExpired={() => {
+              setExpired(true)
+              reload()
+            }}
+            onAlreadyPaid={() => navigate(`/bookings/${booking.id}`, { replace: true })}
+          />
+          <div className="cluster">
             <Button onClick={() => setConfirmRelease(true)}>Change seats</Button>
             <Link to={showtimeLink}>Back to seat map</Link>
           </div>
-        </section>
+        </div>
       </div>
       <ConfirmDialog
         open={confirmRelease}

@@ -60,6 +60,99 @@
   color: var(--text);
 }
 
+/* ---------- My bookings ---------- */
+.booking-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.booking-card {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+.booking-card-poster {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  aspect-ratio: 2 / 3;
+}
+.booking-card h2 {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-1);
+}
+.booking-card h2 a {
+  color: var(--text);
+  text-decoration: none;
+}
+.booking-card h2 a:hover {
+  color: var(--accent);
+}
+.booking-card p {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Demo payment ---------- */
+.demo-payment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.demo-payment-header h2 {
+  margin: 0;
+}
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+.choice.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.choice input {
+  margin-top: 0.2rem;
+  accent-color: var(--accent);
+}
+.attempt-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.attempt-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ---------- Ticket ---------- */
+.ticket-card {
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+.ticket-reference {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin: var(--space-1) 0 var(--space-3);
+}
+
 .countdown {
   display: flex;
   flex-direction: column;

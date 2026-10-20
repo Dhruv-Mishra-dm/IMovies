@@ -290,6 +290,44 @@ besides the seat ids is ignored. A customer can have only one active hold per sh
 partial unique index, so a double-click can't create two). A background sweeper expires overdue
 holds every 15 seconds for tidiness, but correctness never depends on it.
 
+## Payments (demo), cancellations and refunds
+
+**The payment provider is simulated.** No real gateway is contacted, no card details are
+requested or stored, and no money moves. On the DEMO PAYMENT screen the customer chooses
+what the simulated provider should do (approve, or decline with a reason). The provider sits
+behind a small interface (`authorize`, `capture`, `void`, `refund` in
+`server/src/services/payments/simulatedProvider.js`), so a real gateway can replace it. A real
+integration would also confirm results through signature-verified webhooks, never through
+the browser.
+
+| Endpoint | Access | Purpose |
+|---|---|---|
+| `POST /api/bookings/:id/payments` `{ outcome }` + header `Idempotency-Key` | owner | One payment attempt. `201` with `payment.status` `SUCCEEDED` or `FAILED`; a repeated key returns the original result (`200`) |
+| `POST /api/bookings/:id/cancel` | owner | Cancel a confirmed booking ≥ 120 min before the show → full simulated refund |
+| `GET /api/bookings?scope=upcoming\|past\|all` | logged in | Your bookings (cancelled ones are never "upcoming") |
+| `POST /api/admin/showtimes/:id/cancel` `{ reason }` | admin | Cancel a show: every affected booking is cancelled, paid ones refunded |
+
+Rules (approved decisions 2, 4, 5) and safety guarantees:
+
+- **Amount and result come from the server**: the amount is the booking's total; success is the
+  provider's answer. Browser-sent amounts or statuses are ignored.
+- **A failed payment can be retried** while the 10-minute hold lasts. After it expires, payment
+  is refused (`409 HOLD_EXPIRED`) and the seats are free for others.
+- **No double charge**: a repeated `Idempotency-Key` returns the first result; the database
+  allows only one in-progress attempt and only one captured payment per booking.
+- **Confirmation is all-or-nothing**: booking `CONFIRMED`, seats `BOOKED` and payment
+  `SUCCEEDED` commit together, and only if the hold is still valid and the show still open.
+  Otherwise the authorisation is voided ("Not charged") and nothing is announced as booked.
+- **Cancellation**: allowed until 2 hours before the show (server time), full refund; seats of
+  that booking only are released. A refund is recorded once per payment (unique index), so
+  repeated or simultaneous cancellations never refund twice.
+- **Admin show cancellation** first marks the show cancelled (no new holds or payments can
+  commit), then cancels each booking in its own transaction. The result
+  (`COMPLETED`/`PARTIAL` with counts) is stored on the show and in the audit log; calling it
+  again finishes any remaining bookings, and a background job resumes interrupted runs.
+- **Recovery jobs** (every 15 s): expire holds, mark interrupted payments as failed, retry
+  refunds the provider failed, resume interrupted show cancellations.
+
 ## Theatres and showtimes API
 
 | Endpoint | Access | Purpose |

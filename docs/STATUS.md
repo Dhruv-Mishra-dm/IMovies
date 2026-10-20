@@ -8,9 +8,9 @@ Only features whose acceptance criteria are verified are marked **Done**.
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Last completed epic | Epic 6 — seat inventory and booking engine |
-| Current epic | Epic 7 — payment simulation, confirmation, cancellation and refunds |
-| Next steps | Simulated provider (authorize/capture/void/refund), `POST /api/bookings/:id/payments` with Idempotency-Key, confirm transaction, stale-payment recovery, customer cancellation (≥120 min, full refund), admin showtime cancellation (decision 5); payment UI on checkout; confirmation page |
+| Last completed epic | Epics 7 and 9 — payments, cancellations, refunds, booking history |
+| Current epic | Epic 8 — real-time seat availability (Socket.IO) |
+| Next steps | Socket.IO server on the HTTP server (Origin check, cookie auth, `showtime:join`/`leave` with validation, per-user room), forward `events/bus.js` events; client hook with reconnect → refetch; two-browser check |
 
 To resume: `git status`, `git log --oneline -5`, read this file, run the checks in "Latest verified results", continue with the current epic.
 
@@ -24,7 +24,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `d5b27680625badaebd059b8822cce01cf8c07752` | Epic 3 — authentication and authorization |
 | `0c561323caf6b7feb7ad826d278fd25ce1c029e6` | Epic 4 — movie catalogue and search |
 | `a1dcfe25d2356f29270fefc946f315bab19acb8c` | Epic 5 — theatres, screens and show scheduling |
-| _(see `git log`)_ | Epic 6 — seat inventory and booking engine |
+| `0005a059691b0a7b9d7c6cafc3bc07034ba0aa0b` | Epic 6 — seat inventory and booking engine |
+| _(see `git log`)_ | Epics 7 & 9 — payments, cancellations, refunds, booking history |
 
 ## Epic overview
 
@@ -35,10 +36,10 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | 3 | Authentication and authorization | **Done** (`d5b2768`) |
 | 4 | Movie catalog and search | **Done** (`0c56132`) |
 | 5 | Theatres, screens and show scheduling | **Done** (`a1dcfe2`; cancellation → Epic 7) |
-| 6 | Seat inventory and booking engine | **Done** |
-| 7 | Payment simulation and booking confirmation | In progress (also: cancellations, refunds, admin show cancellation) |
-| 8 | Real-time seat availability (Socket.IO) | Pending |
-| 9 | Customer dashboard and booking history | Pending |
+| 6 | Seat inventory and booking engine | **Done** (`0005a05`) |
+| 7 | Payment simulation and booking confirmation (+ cancellations, refunds, admin show cancellation API) | **Done** |
+| 8 | Real-time seat availability (Socket.IO) | In progress |
+| 9 | Customer dashboard and booking history | **Done** (delivered with Epic 7; account page from Epic 3) |
 | 10 | Admin dashboard | Pending |
 | 11 | Security, testing and optimization | Pending |
 | 12 | Deployment and documentation | Pending |
@@ -55,7 +56,37 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
 
-## Epic 6 — seat inventory and booking engine (Done)
+## Epics 7 & 9 — payments, cancellations, refunds, booking history (Done)
+
+**Backend.** `services/payments/simulatedProvider.js` (authorize/capture/void/refund interface, demo outcomes,
+swappable for tests), `services/paymentService.js` (idempotent attempts, authorise → confirm transaction → capture;
+void on any failure to confirm; stale PENDING recovery), `services/refundService.js` (refund recorded PENDING inside
+the cancellation transaction, completed by the provider after commit, retried if it fails),
+`services/cancellationService.js` (customer cancellation with the 120-min rule against the show's current start time;
+admin showtime cancellation: step 1 mark CANCELLED, step 2 per-booking transactions, progress COMPLETED/PARTIAL with
+DB-counted totals, safe to repeat, resumed by a background task), `services/bookingHistoryService.js` (upcoming vs
+past/cancelled). Booking responses now include `payments`, `refunds` and server-computed `cancellation` eligibility.
+Payment JSON hides `idempotencyKey`, `captured`, `user`. The sweeper runs four idempotent tasks.
+
+Idempotency keys and constraints: `(user, idempotencyKey)` unique; one PENDING payment per booking; one captured
+payment per booking; one refund per payment; booking status transitions are conditional updates.
+
+**Frontend.** DEMO PAYMENT panel (explicit "no card details, no real money", outcome choice, new idempotency key per
+attempt, same key kept after a network failure, attempt history), checkout redirects to the ticket on success,
+Booking detail / ticket page (confirmation banner, dashed ticket with reference and authenticity note, payment and
+refund status, cancellation with server cutoff and confirmation dialog), My bookings (Upcoming / Past & cancelled,
+pagination), header link for customers.
+
+**Verified.** Server 166 tests (22 new: success, decline+retry, refusal after expiry, approved-but-expired → VOIDED
+with no "booked" event (required scenario 9), cancelled show during payment, same key repeated and concurrent,
+6 racing attempts → exactly one capture, key reused for another booking → 422, browser-sent amount/card number
+ignored and not stored, stale payment recovery, cancellation before/after cutoff, concurrent cancellations → one
+refund, refund failure retried, admin show cancellation with paid+held bookings incl. retry, interrupted cancellation
+resumed, customer and admin cancelling simultaneously → one refund, history scopes). Client 71 tests (8 new).
+**Browser (full journey):** F7+F8 held, declined demo payment shown with retry, approved → confirmation page
+(`IMV-RY7QU725`, ₹500 paid), cancelled via dialog → refund ₹500 recorded, payment REFUNDED, seats free again.
+
+## Epic 6 — seat inventory and booking engine (Done, `0005a05`)
 
 **Backend.** `services/holdService.js` (`createHold`, `releaseHold`, `getSeatAvailability`, `expireHolds`,
 `sweepExpiredHolds`, `lockOpenShowtime`), `events/bus.js` (domain events published only after commit),
@@ -224,11 +255,11 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 
 | Check | Command | Result |
 |---|---|---|
-| Backend tests | `cd server; npm test` | **144 passed**, 0 failed, 0 skipped |
+| Backend tests | `cd server; npm test` | **166 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
-| Frontend tests | `cd client; npm test` | **63 passed**, 0 failed |
+| Frontend tests | `cd client; npm test` | **71 passed**, 0 failed |
 | Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
-| Browser check | Chrome via browser integration | Epics 3–6 flows verified; mobile width not verified |
+| Browser check | Chrome via browser integration | Full customer journey verified; mobile width not verified |
 
 ## Architectural decisions
 

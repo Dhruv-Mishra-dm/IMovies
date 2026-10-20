@@ -148,7 +148,7 @@ describe('seat selection', () => {
 
 describe('checkout', () => {
   it('shows the server-priced summary and a countdown', async () => {
-    bookingsApi.getBooking.mockResolvedValue(ok({ booking: heldBooking(), serverTime: new Date().toISOString() }))
+    bookingsApi.getBooking.mockResolvedValue(ok({ booking: heldBooking(), payments: [], refunds: [], serverTime: new Date().toISOString() }))
     renderApp('/bookings/b1/checkout')
     expect(await screen.findByRole('heading', { name: 'Review and pay' })).toBeInTheDocument()
     expect(screen.getByText('IMV-ABCDEFGH')).toBeInTheDocument()

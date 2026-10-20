@@ -1,5 +1,6 @@
 import * as theatres from '../services/theatreService.js';
 import * as showtimes from '../services/showtimeService.js';
+import { cancelShowtime as cancelShowtimeAndBookings } from '../services/cancellationService.js';
 
 // ---------- Public ----------
 
@@ -72,4 +73,10 @@ export async function createShowtime(req, res) {
 
 export async function updateShowtime(req, res) {
   res.json({ showtime: await showtimes.updateShowtime(req.validated.params.id, req.validated.body, req.user._id) });
+}
+
+/** Approved decision 5. Responds with the outcome; `cancellation.progress` is COMPLETED or PARTIAL (retry). */
+export async function cancelShowtime(req, res) {
+  const showtime = await cancelShowtimeAndBookings(req.user._id, req.validated.params.id, req.validated.body);
+  res.json({ showtime: { id: showtime.id, status: showtime.status, cancellation: showtime.cancellation } });
 }

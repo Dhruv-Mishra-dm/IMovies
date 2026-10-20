@@ -4,6 +4,7 @@ import { validate } from '../middleware/validate.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { idParams } from '../utils/validation.js';
 import * as v from '../validators/cinema.js';
+import { cancelShowtimeBody } from '../validators/bookings.js';
 
 /** Public: /api/theatres, /api/cities, /api/showtimes */
 export function cinemaRoutes() {
@@ -32,5 +33,6 @@ export function adminCinemaRoutes() {
   router.get('/showtimes', validate({ query: v.adminShowtimeListQuery }), cinema.adminListShowtimes);
   router.post('/showtimes', validate({ body: v.createShowtimeBody }), cinema.createShowtime);
   router.patch('/showtimes/:id', validate({ params: idParams, body: v.updateShowtimeBody }), cinema.updateShowtime);
+  router.post('/showtimes/:id/cancel', validate({ params: idParams, body: cancelShowtimeBody }), cinema.cancelShowtime);
   return router;
 }

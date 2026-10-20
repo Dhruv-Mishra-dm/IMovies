@@ -4,6 +4,10 @@ import { connectDB, disconnectDB } from './config/db.js';
 import { ensureIndexes } from './models/index.js';
 import { createApp } from './app.js';
 import { startHoldSweeper } from './jobs/holdSweeper.js';
+import { sweepExpiredHolds } from './services/holdService.js';
+import { failStalePayments } from './services/paymentService.js';
+import { retryPendingRefunds } from './services/refundService.js';
+import { resumeShowtimeCancellations } from './services/cancellationService.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -23,7 +27,10 @@ async function start() {
     logger.info(`API listening on http://localhost:${env.port} (${env.nodeEnv})`);
   });
 
-  const stopSweeper = startHoldSweeper();
+  // Background clean-up and recovery (all idempotent and safe with several server instances).
+  const stopSweeper = startHoldSweeper({
+    tasks: [sweepExpiredHolds, failStalePayments, retryPendingRefunds, resumeShowtimeCancellations],
+  });
 
   server.on('error', (err) => {
     const hint = err.code === 'EADDRINUSE' ? ` Port ${env.port} is already in use — stop the other process or change PORT.` : '';

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { PAYMENT_STATUS } from '../domain/statuses.js';
 import { CURRENCY } from '../config/business.js';
-import { schemaOptions } from './shared.js';
+import { schemaOptions, jsonOptions } from './shared.js';
 
 // One document per payment ATTEMPT. A booking can have several (failed, then retried).
 // No card data is ever stored: the simulated provider only needs the chosen outcome.
@@ -25,7 +25,20 @@ const paymentSchema = new mongoose.Schema(
     failedAt: Date,
     refundedAt: Date,
   },
-  schemaOptions,
+  {
+    ...schemaOptions,
+    // Internal bookkeeping fields are not sent to browsers.
+    toJSON: {
+      ...jsonOptions,
+      transform(doc, ret) {
+        delete ret._id;
+        delete ret.idempotencyKey;
+        delete ret.captured;
+        delete ret.user;
+        return ret;
+      },
+    },
+  },
 );
 
 paymentSchema.index({ user: 1, idempotencyKey: 1 }, { unique: true });

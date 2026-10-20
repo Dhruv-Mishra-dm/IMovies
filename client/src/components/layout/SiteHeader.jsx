@@ -60,6 +60,13 @@ export default function SiteHeader() {
                 </NavLink>
               </li>
             ))}
+            {user?.role === 'customer' && (
+              <li>
+                <NavLink to="/bookings" className={linkClass}>
+                  My bookings
+                </NavLink>
+              </li>
+            )}
             {user?.role === 'admin' && (
               <li>
                 <NavLink to="/admin" className={linkClass}>
