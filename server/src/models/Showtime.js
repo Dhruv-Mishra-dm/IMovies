@@ -55,7 +55,10 @@ showtimeSchema.path('endsAt').validate(function endsAfterStart(value) {
 }, 'endsAt must be after startsAt');
 
 showtimeSchema.path('prices').validate(function pricesCoverCategories(prices) {
-  const codes = (this.seatMap?.categories ?? []).map((c) => c.code);
+  // During update queries `this` is the query, not the document, so the seat map isn't available;
+  // the showtime service checks prices against the seat map before every update.
+  if (!this.seatMap?.categories) return true;
+  const codes = this.seatMap.categories.map((c) => c.code);
   const priced = new Set(prices.map((p) => p.category));
   return prices.length === priced.size && codes.every((code) => priced.has(code)) && priced.size === codes.length;
 }, 'Exactly one price is required for every seat category');

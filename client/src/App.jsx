@@ -9,6 +9,9 @@ import RegisterPage from './pages/RegisterPage.jsx'
 import AccountPage from './pages/AccountPage.jsx'
 import MoviesPage from './pages/MoviesPage.jsx'
 import MovieDetailPage from './pages/MovieDetailPage.jsx'
+import TheatresPage from './pages/TheatresPage.jsx'
+import TheatreDetailPage from './pages/TheatreDetailPage.jsx'
+import ShowtimePage from './pages/ShowtimePage.jsx'
 import { NotFoundPage, StatusPage } from './pages/SimplePages.jsx'
 
 export function AppRoutes() {
@@ -19,6 +22,9 @@ export function AppRoutes() {
         <Route path="status" element={<StatusPage />} />
         <Route path="movies" element={<MoviesPage />} />
         <Route path="movies/:slug" element={<MovieDetailPage />} />
+        <Route path="theatres" element={<TheatresPage />} />
+        <Route path="theatres/:slug" element={<TheatreDetailPage />} />
+        <Route path="showtimes/:id" element={<ShowtimePage />} />
         <Route element={<GuestOnly />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />

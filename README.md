@@ -264,3 +264,23 @@ restarts and even `docker compose down`.
 
 Release dates are IST calendar dates (`"2026-12-25"`). Search is case-insensitive and treats
 special characters literally.
+
+## Theatres and showtimes API
+
+| Endpoint | Access | Purpose |
+|---|---|---|
+| `GET /api/cities` · `GET /api/theatres?city=` · `GET /api/theatres/:idOrSlug` | public | Active theatres (with screens) |
+| `GET /api/showtimes?movie=&theatre=&city=&date=YYYY-MM-DD` | public | Upcoming bookable shows (default: next 7 days) with `priceFrom`, `capacity`, `seatsLeft` |
+| `GET /api/showtimes/dates?movie=&theatre=&city=` | public | IST dates in the next 14 days that have shows |
+| `GET /api/showtimes/:id` | public | One show with its seat map, named prices and `availability` (`OPEN`, `STARTED`, `COMPLETED`, `CANCELLED`) |
+| `GET/POST /api/admin/theatres` · `GET/PATCH /api/admin/theatres/:id` | admin | Theatres (deactivation refused while upcoming shows exist) |
+| `POST /api/admin/theatres/:id/screens` · `GET/PATCH/DELETE /api/admin/screens/:id` | admin | Screens and seat layouts |
+| `GET/POST /api/admin/showtimes` · `PATCH /api/admin/showtimes/:id` | admin | Scheduling (IST `date` + `time`, prices in paise per seat category) |
+
+Scheduling rules: the movie must be published and released by that date, the screen and
+theatre active, the language one the movie offers, and every seat category priced. A show
+occupies its screen until it ends **plus 15 minutes turnaround**; overlapping shows on the
+same screen are rejected with `409 SHOWTIME_OVERLAP`, even when two admins submit at the
+same moment. Once seats are held or booked, a show's time can no longer change (prices can;
+existing bookings keep the price they paid). Editing a screen's layout only affects shows
+scheduled afterwards, because every show keeps its own copy of the seat map.

@@ -11,6 +11,7 @@ const linkClass = ({ isActive }) => `nav-link${isActive ? ' active' : ''}`
 const PRIMARY_LINKS = [
   { to: '/', label: 'Home', end: true },
   { to: '/movies', label: 'Movies' },
+  { to: '/theatres', label: 'Theatres' },
 ]
 
 export default function SiteHeader() {

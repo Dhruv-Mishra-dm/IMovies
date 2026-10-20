@@ -8,9 +8,9 @@ Only features whose acceptance criteria are verified are marked **Done**.
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Last completed epic | Epic 4 — movie catalogue and search |
-| Current epic | Epic 5 — theatres, screens and show scheduling |
-| Next steps | Theatre/screen/showtime public API (filter by movie, city, date, theatre) + admin CRUD with transactional overlap check and showtime cancellation skeleton; showtime picker on movie detail; Theatres pages |
+| Last completed epic | Epic 5 — theatres, screens and show scheduling |
+| Current epic | Epic 6 — seat inventory and booking engine |
+| Next steps | `GET /api/showtimes/:id/seats`, `POST /api/bookings` (transactional hold of seats, 10-min expiry, server-side pricing), release, expiry sweeper; seat selection UI |
 
 To resume: `git status`, `git log --oneline -5`, read this file, run the checks in "Latest verified results", continue with the current epic.
 
@@ -22,7 +22,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `1c1b4c0467b4deac179e529579a7b83212e66291` | Epic 1 — hardened project foundation |
 | `6b870e54a719d1abc301711f999fb5f476366089` | Epic 2 — database models and seed data |
 | `d5b27680625badaebd059b8822cce01cf8c07752` | Epic 3 — authentication and authorization |
-| _(see `git log`)_ | Epic 4 — movie catalogue and search |
+| `0c561323caf6b7feb7ad826d278fd25ce1c029e6` | Epic 4 — movie catalogue and search |
+| _(see `git log`)_ | Epic 5 — theatres, screens and show scheduling |
 
 ## Epic overview
 
@@ -31,9 +32,9 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | 1 | Repository assessment and project foundation | **Done** (`1c1b4c0`) |
 | 2 | Database models and seed data | **Done** (`6b870e5`) |
 | 3 | Authentication and authorization | **Done** (`d5b2768`) |
-| 4 | Movie catalog and search | **Done** |
-| 5 | Theatres, screens and show scheduling | In progress |
-| 6 | Seat inventory and booking engine | Pending |
+| 4 | Movie catalog and search | **Done** (`0c56132`) |
+| 5 | Theatres, screens and show scheduling | **Done** (cancellation → Epic 7) |
+| 6 | Seat inventory and booking engine | In progress |
 | 7 | Payment simulation and booking confirmation | Pending |
 | 8 | Real-time seat availability (Socket.IO) | Pending |
 | 9 | Customer dashboard and booking history | Pending |
@@ -53,7 +54,34 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
 
-## Epic 4 — movie catalogue and search (Done)
+## Epic 5 — theatres, screens and show scheduling (Done)
+
+**Backend.** `services/theatreService.js`, `services/showtimeService.js`, `validators/cinema.js` (seat layout schema
+reuses `domain/seatLayout.js`), `routes/cinema.routes.js`. Public: cities, active theatres (+screen counts), theatre
+detail, upcoming shows filtered by movie/theatre/city/IST date with `priceFrom`/`capacity`/`seatsLeft` (booked seats +
+unexpired holds), IST dates with shows, single show with seat map and named prices, derived `availability`
+(OPEN/STARTED/COMPLETED/CANCELLED). Admin: theatre CRUD (deactivate refused with upcoming shows), screen CRUD (layout
+edits affect only future shows; delete only unused screens), scheduling in a transaction that first increments
+`Screen.scheduleVersion` (serialises same-screen scheduling) then checks overlap including 15-min turnaround; edits:
+prices/language anytime, time only without active bookings (checked inside the transaction, `lockVersion` bumped).
+
+**Deferred by design:** admin showtime **cancellation** (approved decision 5) needs bookings, payments and refunds;
+it is implemented in Epic 7 together with customer cancellation and refunds.
+
+**Frontend.** `ShowtimePicker` (date tabs, city filter, groups by theatre or movie, sold-out/filling-fast hints, all
+IST, state in URL), Theatres list (city filter) and Theatre detail (shows by movie), Showtime page (details, prices,
+read-only `SeatMap`). `SeatMap`: grid columns create aisles; states by shape as well as colour (held = stripes,
+booked = ×, out of service = dashed, accessible = blue dot); one tab stop with arrow-key navigation; read-only mode
+renders labelled images, not dead buttons.
+
+**Verified.** Server 129 tests (15 new: filters, IST dates, seats-left accounting incl. expired holds, availability
+over time, overlap incl. turnaround and back-to-back, **5 simultaneous overlapping schedules → exactly 1 created**,
+validation, edit rules, deactivation rules, layout snapshot). Client 53 tests (8 new). Browser: movie page showtime
+picker with live data, showtime page seat map (aisles, recliner offset, out-of-service D7, accessible markers, 127
+seats left). Fixed during the epic: Mongoose update validator ran without the document (price edits rejected);
+read-only seats showed a hover affordance.
+
+## Epic 4 — movie catalogue and search (Done, `0c56132`)
 
 **Backend.** `services/movieService.js`, `validators/movies.js`, `routes/movies.routes.js`; `utils/query.js`
 (escaped regex search, pagination), `services/auditService.js` (admin actions → `auditlogs` + log line).
@@ -168,11 +196,11 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 
 | Check | Command | Result |
 |---|---|---|
-| Backend tests | `cd server; npm test` | **114 passed**, 0 failed, 0 skipped |
+| Backend tests | `cd server; npm test` | **129 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
-| Frontend tests | `cd client; npm test` | **45 passed**, 0 failed |
+| Frontend tests | `cd client; npm test` | **53 passed**, 0 failed |
 | Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
-| Browser check | Chrome via browser integration | Auth (Epic 3) and catalogue (Epic 4) flows verified; mobile width not verified |
+| Browser check | Chrome via browser integration | Epics 3–5 flows verified; mobile width not verified |
 
 ## Architectural decisions
 

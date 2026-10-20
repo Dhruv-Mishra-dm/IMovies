@@ -9,6 +9,7 @@ import { logger } from './config/logger.js';
 import healthRoutes from './routes/health.routes.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { movieRoutes, adminMovieRoutes } from './routes/movies.routes.js';
+import { cinemaRoutes, adminCinemaRoutes } from './routes/cinema.routes.js';
 import { originCheck } from './middleware/originCheck.js';
 import { createRateLimiters } from './middleware/rateLimits.js';
 import { notFound, errorHandler } from './middleware/errorHandlers.js';
@@ -63,6 +64,8 @@ export function createApp({ clientOrigin, rateLimitEnabled = env.rateLimitEnable
   app.use('/api/auth', authRoutes({ limits }));
   app.use('/api/movies', movieRoutes());
   app.use('/api/admin/movies', adminMovieRoutes());
+  app.use('/api', cinemaRoutes());
+  app.use('/api/admin', adminCinemaRoutes());
 
   app.use(notFound);
   app.use(errorHandler);

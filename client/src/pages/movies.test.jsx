@@ -8,6 +8,14 @@ import { formatDuration, formatPrice, formatTime } from '../utils/format.js'
 
 vi.mock('../api/auth.js', () => ({ getMe: vi.fn(), login: vi.fn(), register: vi.fn(), logout: vi.fn(), logoutAll: vi.fn() }))
 vi.mock('../api/movies.js', () => ({ listMovies: vi.fn(), getMovieFilters: vi.fn(), getMovie: vi.fn() }))
+vi.mock('../api/cinema.js', () => {
+  const ok = (data) => ({ ok: true, status: 200, kind: 'ok', data })
+  return {
+    listCities: vi.fn(async () => ok({ cities: [] })),
+    listShowtimeDates: vi.fn(async () => ok({ dates: [] })),
+    listShowtimes: vi.fn(async () => ok({ showtimes: [] })),
+  }
+})
 
 const movie = (overrides = {}) => ({
   id: overrides.slug ?? 'm1',

@@ -3,6 +3,7 @@ import { getMovie } from '../api/movies.js'
 import { errorMessage } from '../api/client.js'
 import { useApiResource } from '../hooks/useApiResource.js'
 import MoviePoster from '../components/movies/MoviePoster.jsx'
+import ShowtimePicker from '../components/showtimes/ShowtimePicker.jsx'
 import Button from '../components/ui/Button.jsx'
 import { PageLoader, EmptyState, ErrorState } from '../components/ui/Feedback.jsx'
 import { formatDuration, formatLongDate } from '../utils/format.js'
@@ -81,6 +82,11 @@ export default function MovieDetailPage() {
             </dl>
           </section>
         </div>
+        {!comingSoon && (
+          <div className="section">
+            <ShowtimePicker movieId={movie.id} groupBy="theatre" />
+          </div>
+        )}
       </div>
     </article>
   )

@@ -1,0 +1,285 @@
+/* ---------- Showtime picker ---------- */
+.showtime-picker .section-header {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.showtime-picker .field {
+  min-width: 12rem;
+}
+.date-tabs {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.date-tabs button {
+  flex: none;
+  min-height: 2.75rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.date-tabs button[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+.showtime-groups {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.showtime-group {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) 3fr;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+@media (max-width: 760px) {
+  .showtime-group {
+    grid-template-columns: 1fr;
+  }
+}
+.showtime-group-header h3 {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-1);
+}
+.showtime-group-header h3 a {
+  color: var(--text);
+  text-decoration: none;
+}
+.showtime-group-header h3 a:hover {
+  color: var(--accent);
+}
+.showtime-group-header p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+.showtime-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.showtime-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 7.5rem;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+  border: 1px solid var(--success);
+  color: var(--text);
+  text-decoration: none;
+  line-height: 1.3;
+}
+.showtime-button:hover {
+  background: var(--success-soft);
+  color: var(--text);
+}
+.showtime-time {
+  font-weight: 700;
+  color: var(--success);
+}
+.showtime-meta,
+.showtime-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+.showtime-hint {
+  color: var(--warning);
+}
+.showtime-button.disabled {
+  border-color: var(--border);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.showtime-button.disabled .showtime-time,
+.showtime-hint.sold-out {
+  color: var(--text-faint);
+}
+
+/* ---------- Theatres ---------- */
+.theatre-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+}
+.theatre-card h2 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-1);
+}
+.theatre-card h2 a {
+  color: var(--text);
+  text-decoration: none;
+}
+.theatre-card h2 a:hover {
+  color: var(--accent);
+}
+
+/* ---------- Seat map ---------- */
+.seat-map {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-3);
+}
+.seat-screen {
+  margin: 0 auto var(--space-6);
+  width: min(80%, 32rem);
+  text-align: center;
+  font-size: var(--text-xs);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding-bottom: var(--space-2);
+  border-bottom: 4px solid var(--border-strong);
+  border-radius: 0 0 50% 50% / 0 0 12px 12px;
+}
+.seat-map-scroll {
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+.seat-rows {
+  --seat: 1.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: max-content;
+  margin: 0 auto;
+}
+.seat-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.row-label {
+  width: 1.5rem;
+  text-align: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-faint);
+}
+.seat-row-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--seat));
+  gap: 0.3rem;
+}
+.seat {
+  width: var(--seat);
+  height: var(--seat);
+  padding: 0;
+  border-radius: 6px 6px 3px 3px;
+  border: 1px solid var(--seat-available-border);
+  background: var(--seat-available);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  cursor: default;
+}
+.seat-map [aria-pressed] {
+  cursor: pointer;
+}
+.seat-map .seat[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+/* hover feedback only on real (interactive) seat buttons, never on the read-only map */
+button.seat-available:hover:not([aria-disabled='true']) {
+  border-color: var(--accent);
+}
+.seat-selected {
+  background: var(--seat-selected);
+  border-color: var(--seat-selected);
+  color: var(--accent-contrast);
+}
+.seat-mine {
+  background: var(--accent-soft);
+  border: 2px solid var(--accent);
+  color: var(--text);
+}
+/* held by someone else: diagonal stripes */
+.seat-held {
+  background: repeating-linear-gradient(135deg, var(--seat-held) 0 4px, var(--surface-2) 4px 8px);
+  border-color: var(--seat-held);
+  color: transparent;
+}
+/* booked: dark with a cross */
+.seat-booked {
+  background: var(--seat-booked);
+  border-color: var(--border);
+  color: transparent;
+}
+.seat-booked::after {
+  content: '×';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+  font-size: 1rem;
+}
+/* out of service: dashed outline, no fill */
+.seat-unavailable {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: transparent;
+}
+/* wheelchair accessible: small corner marker */
+.seat-accessible::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--info);
+}
+.seat-legend {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-5) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+.seat-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.seat-sample {
+  --seat: 1.25rem;
+}
+.price-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+}
