@@ -16,6 +16,21 @@ coverage/
 *.log
 npm-debug.log*
 
+# Credentials and keys — never commit
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Temporary files and local database data
+tmp/
+*.tmp
+data/db/
+
+# Test reports
+test-results/
+playwright-report/
+
 # Editor / OS clutter
 .vscode/*
 !.vscode/extensions.json

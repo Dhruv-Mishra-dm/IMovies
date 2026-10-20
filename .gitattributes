@@ -1,0 +1,13 @@
+# Store and check out text files with LF line endings on every OS,
+# overriding Git for Windows' default CRLF conversion.
+* text=auto eol=lf
+
+# Never touch binary files.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary

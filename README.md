@@ -3,8 +3,9 @@
 A cinema ticket booking and management system built with the MERN stack
 (MongoDB, Express, React, Node.js).
 
-> **Status:** Epic 0 — project foundation. The app currently shows a system
+> **Status:** Epic 1 — project foundation complete. The app currently shows a system
 > status page that checks the API and database. Booking features come in later epics.
+> See [docs/STATUS.md](docs/STATUS.md) for detailed progress, decisions and test results.
 
 ## Project layout
 
@@ -12,17 +13,20 @@ A cinema ticket booking and management system built with the MERN stack
 IMovies/
 ├── client/               React + Vite frontend (http://localhost:5173)
 │   └── src/
-│       ├── api/          functions that call the backend
-│       └── components/   reusable UI pieces
+│       ├── api/          axios instance + functions that call the backend
+│       ├── components/   reusable UI pieces (with *.test.jsx next to them)
+│       └── test/         Vitest setup
 ├── server/               Express API (http://localhost:5000)
 │   ├── src/
-│   │   ├── config/       environment variables, database connection
+│   │   ├── config/       env validation, logger, database connection
 │   │   ├── routes/       URL → controller mapping
 │   │   ├── controllers/  turn HTTP requests into responses
-│   │   ├── middleware/   404 + error handling (auth comes in Epic 1)
+│   │   ├── middleware/   request validation, 404 + error handling
+│   │   ├── utils/        AppError, shared validation schemas
 │   │   ├── app.js        builds the Express app (used by tests too)
 │   │   └── server.js     connects to MongoDB, then starts listening
 │   └── tests/            automated tests (node:test + supertest)
+├── docs/STATUS.md        project status / hand-over document
 └── docker-compose.yml    local MongoDB 8 (single-node replica set)
 ```
 
@@ -30,7 +34,7 @@ IMovies/
 
 | Tool | Version used | Check with |
 |---|---|---|
-| Node.js | 22 or newer (developed on 24) | `node -v` |
+| Node.js | 22.12 or newer, or 24.15+ (developed on 24.18) | `node -v` |
 | npm | 10 or newer | `npm -v` |
 | Docker Desktop | any recent version, **running** | `docker info` |
 | Git | any recent version | `git --version` |
@@ -64,6 +68,29 @@ cd ..
 `.env` holds your local settings and is ignored by Git. The defaults in
 `.env.example` work as-is for local development.
 
+### Environment variables (server)
+
+| Variable | Required | Example / default | Purpose |
+|---|---|---|---|
+| `NODE_ENV` | no | `development` | `development`, `test` or `production` |
+| `PORT` | no | `5000` | Must be a whole number from 1 to 65535 |
+| `MONGODB_URI` | **yes** | `mongodb://127.0.0.1:27017/imovies?replicaSet=rs0` | Development database |
+| `MONGODB_URI_TEST` | for tests | `mongodb://127.0.0.1:27017/imovies_test?replicaSet=rs0` | Must end in `_test` and differ from `MONGODB_URI` |
+| `CLIENT_ORIGIN` | **yes** | `http://localhost:5173` | The only browser origin allowed by CORS (no trailing slash) |
+| `LOG_LEVEL` | no | `info` (`silent` in tests) | Log verbosity |
+| `LOG_PRETTY` | no | `true` in development | `false` gives JSON log lines |
+
+If a value is missing or invalid the server refuses to start and prints which variable is
+wrong (never its value), for example:
+
+```
+Invalid environment configuration:
+  - PORT Invalid input: expected number, received NaN
+```
+
+The client has one optional variable, `VITE_API_URL` (see `client/.env.example`).
+Anything starting with `VITE_` is visible to every browser, so never put secrets there.
+
 ## Running the app
 
 You need **two** PowerShell windows (one per server).
@@ -92,15 +119,36 @@ Invoke-RestMethod http://localhost:5000/api/health
 ## Checks and tests
 
 ```powershell
-# Backend tests (MongoDB must be running — they use the separate imovies_test database)
+# Backend: tests (MongoDB must be running) and lint
 cd C:\Users\Lenovo\Desktop\IMovies\server
 npm test
+npm run lint
 
-# Frontend lint and production build
+# Frontend: tests, lint and production build
 cd C:\Users\Lenovo\Desktop\IMovies\client
+npm test
 npm run lint
 npm run build
 ```
+
+`npm test` in `server/` always runs with `NODE_ENV=test` and therefore uses
+`MONGODB_URI_TEST`. A built-in guard refuses to run if that database is your development
+database or its name doesn't end in `_test`, because tests delete data.
+`npm run test:watch` in `client/` re-runs frontend tests as you edit.
+
+## Logs and errors
+
+- In development the API prints one readable line per request. Each request gets an id,
+  returned in the `X-Request-Id` response header.
+- Every API error has the same shape, so the frontend can handle them in one place:
+
+  ```json
+  { "error": { "code": "VALIDATION_ERROR", "message": "Request validation failed", "details": [], "requestId": "…" } }
+  ```
+
+- For unexpected (500) errors the response says only `Internal server error`; the full
+  details are in the server log, findable by `requestId`.
+- Passwords, tokens and cookies are redacted from logs.
 
 ## Managing the database container
 
@@ -133,12 +181,20 @@ restarts and even `docker compose down`.
   websites' JavaScript cannot read API responses.
 - **No `dotenv` package.** Node 22+ can load `.env` files itself
   (`process.loadEnvFile`), so that is one less dependency.
+- **Health means "can take bookings".** `/api/health` returns 200 only when MongoDB is
+  connected *and* accepts writes (it is the replica-set primary); otherwise 503.
 
-## Security plan for authentication (Epic 1)
+- **Requests are validated with zod.** Controllers only read validated data
+  (`req.validated`), so unknown fields such as `role` are dropped and MongoDB operators
+  like `{ "$gt": "" }` are rejected.
 
-- JWT stored in an **httpOnly** cookie (JavaScript can't read it, so XSS can't steal it).
-- `SameSite=Lax` in development; `Secure` (HTTPS-only) in production.
-- **CSRF protection** for state-changing requests (POST/PUT/PATCH/DELETE): a
-  CSRF token checked by the server, plus an Origin header check against the allowlist.
-- Real secrets (e.g. `JWT_SECRET`) go only in `server/.env`, never in Git.
+## Security plan for authentication (Epic 3)
+
+- Short-lived (15 min) JWT access token plus a rotating refresh token, both in
+  **httpOnly** cookies (JavaScript can't read them, so XSS can't steal them).
+- `SameSite=Strict`; `Secure` (HTTPS-only) in production.
+- **CSRF protection** for state-changing requests (POST/PUT/PATCH/DELETE): the server
+  rejects requests whose `Origin` header is not the allowed client origin, and requires
+  JSON bodies. Together with `SameSite=Strict` this replaces a separate CSRF token.
+- Real secrets (e.g. the JWT signing secret) go only in `server/.env`, never in Git.
   `.env.example` contains placeholders only.

@@ -1,0 +1,14 @@
+# Shared editor settings (supported natively by VS Code via the EditorConfig extension, and by JetBrains IDEs).
+# Code style: server uses semicolons, client follows the Vite template (no semicolons); both use single quotes.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false

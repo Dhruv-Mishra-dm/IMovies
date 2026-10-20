@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["oxc", "import", "node"],
+  "env": {
+    "node": true
+  },
+  "rules": {
+    "no-console": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["src/config/env.js"],
+      "rules": { "no-console": "off" }
+    }
+  ]
+}
