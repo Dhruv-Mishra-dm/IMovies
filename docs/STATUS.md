@@ -8,9 +8,9 @@ Only features whose acceptance criteria are verified are marked **Done**.
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Last completed epic | Epic 2 — database models and seed data |
-| Current epic | Epic 3 — authentication and authorization |
-| Next steps | Implement auth API (register/login/refresh/logout/me), middleware, Origin check, rate limits, admin bootstrap script; then frontend shell + auth pages |
+| Last completed epic | Epic 3 — authentication and authorization |
+| Current epic | Epic 4 — movie catalogue and search |
+| Next steps | Public movie API (list/search/filter/paginate/detail) + admin movie CRUD/publish/archive; Home + Movies + Movie detail pages |
 
 To resume: `git status`, `git log --oneline -5`, read this file, run the checks in "Latest verified results", continue with the current epic.
 
@@ -20,16 +20,17 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 |---|---|
 | `c5b46e26b0e07760f9e1b983c41bcde506d99b63` | Epic 0 — project foundation (baseline) |
 | `1c1b4c0467b4deac179e529579a7b83212e66291` | Epic 1 — hardened project foundation |
-| _(see `git log`)_ | Epic 2 — database models and seed data |
+| `6b870e54a719d1abc301711f999fb5f476366089` | Epic 2 — database models and seed data |
+| _(see `git log`)_ | Epic 3 — authentication and authorization |
 
 ## Epic overview
 
 | # | Epic | Status |
 |---|---|---|
 | 1 | Repository assessment and project foundation | **Done** (`1c1b4c0`) |
-| 2 | Database models and seed data | **Done** |
-| 3 | Authentication and authorization | In progress |
-| 4 | Movie catalog and search | Pending |
+| 2 | Database models and seed data | **Done** (`6b870e5`) |
+| 3 | Authentication and authorization | **Done** |
+| 4 | Movie catalog and search | In progress |
 | 5 | Theatres, screens and show scheduling | Pending |
 | 6 | Seat inventory and booking engine | Pending |
 | 7 | Payment simulation and booking confirmation | Pending |
@@ -51,7 +52,35 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
 
-## Epic 2 — database models and seed data (Done)
+## Epic 3 — authentication and authorization (Done)
+
+**Backend.** `services/authService.js` (register, login, rotate, logout, revoke-all, change password),
+`services/tokenService.js` (HS256 JWT with issuer/audience, algorithm pinned; refresh token = 256 random bits,
+stored as SHA-256), `middleware/auth.js` (`authenticate`, `optionalAuth`, `requireRole`, `requireAdmin`; user and
+`tokenVersion` reloaded from the DB on every request), `middleware/originCheck.js` (CSRF: Origin/Referer must equal
+`CLIENT_ORIGIN` for unsafe methods), `middleware/rateLimits.js` (express-rate-limit, in-memory), `utils/cookies.js`.
+Admin bootstrap: `npm run create-admin` (env vars `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`).
+
+Design details: refresh tokens slide (each rotated token is valid 7 days from issue); a reused token inside a 10 s
+grace window returns 409 `REFRESH_CONFLICT` (two tabs refreshing at once) instead of revoking — documented
+trade-off; login compares against a dummy hash for unknown emails (timing); registration reveals that an email is
+taken (409) — accepted, no email verification in scope; passwords 8–72 bytes with a letter and a digit.
+
+**Frontend.** Design system (`client/src/styles/*`: tokens, base, components, layout; dark theme, all text pairs
+≥ 4.5:1 contrast), app shell with responsive header, `AuthProvider` + `useAuth`, `useSignOut`, route guards
+(`RequireAuth`, `RequireAdmin`, `GuestOnly`; safe `?next=` handling), Login, Register, Account (rename, change
+password, log out everywhere with confirmation dialog), Not-found, System status. `api/client.js` refreshes the
+session once on 401 and retries once (shared refresh, no loops), with react-toastify notifications.
+
+**Verified.** Server 98 tests (31 new auth/rate-limit/admin-script tests including 10 simultaneous registrations →
+exactly 1 created, refresh reuse → family revoked, concurrent refresh → exactly 1 rotation, tampered/`alg:none`
+tokens rejected, role change applies immediately, Origin check). Client 35 tests. **Browser (Chrome, real dev
+servers):** registration with client validation, toast and signed-in header; `document.cookie` empty (httpOnly);
+server-side logout effective; protected page → `/login?next=/account`; wrong password → generic error; correct
+login → back to `/account`; console free of errors. Found and fixed in the browser: stale field errors stayed
+visible after editing. **Not verified in browser:** mobile width (window resize had no effect — window maximised).
+
+## Epic 2 — database models and seed data (Done, `6b870e5`)
 
 ### Data model
 
@@ -115,11 +144,11 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 
 | Check | Command | Result |
 |---|---|---|
-| Backend tests | `cd server; npm test` | **67 passed**, 0 failed, 0 skipped |
+| Backend tests | `cd server; npm test` | **98 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
-| Frontend tests | `cd client; npm test` | 13 passed (unchanged in Epic 2) |
-| Frontend lint / build | `cd client; npm run lint; npm run build` | Passed (unchanged in Epic 2) |
-| Browser (visual) check | — | Not yet performed (no customer pages yet) |
+| Frontend tests | `cd client; npm test` | **35 passed**, 0 failed |
+| Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
+| Browser check | Chrome via browser integration | Auth flows verified (see Epic 3); mobile width not verified |
 
 ## Architectural decisions
 
@@ -144,12 +173,15 @@ Showtime turnaround 15 min; max 10 seats per booking (`server/src/config/busines
 ## Known defects / limitations
 
 - `client` uses oxlint 1.89.0 (from the Vite scaffold), `server` uses 1.87.0 — harmless.
-- Frontend is still the Epic 0 status page; customer UI starts in Epic 3/4.
+- Rate limits use an in-memory store: correct for one server process only.
+- The browser must use `http://localhost:5173` (the configured `CLIENT_ORIGIN`); `127.0.0.1:5173` fails the Origin check.
 
 ## Environment variables
 
 Server (`server/.env`, template in `server/.env.example`): `NODE_ENV`, `PORT`, `MONGODB_URI`, `MONGODB_URI_TEST`,
-`CLIENT_ORIGIN`, optional `LOG_LEVEL`, `LOG_PRETTY`. Client: optional `VITE_API_URL`.
+`CLIENT_ORIGIN`, **`JWT_ACCESS_SECRET` (required)**, optional `BCRYPT_COST`, `COOKIE_SECURE`, `TRUST_PROXY`,
+`RATE_LIMIT_ENABLED`, `LOG_LEVEL`, `LOG_PRETTY`. Script-only: `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`.
+Client: optional `VITE_API_URL`.
 
 ## Setup
 

@@ -39,8 +39,24 @@ const schema = z
     CLIENT_ORIGIN: origin,
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).optional(),
     LOG_PRETTY: booleanString.optional(),
+    // Signs access tokens. Generate with:  node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+    JWT_ACCESS_SECRET: z.string().min(32, 'must be at least 32 characters (generate a random value)'),
+    BCRYPT_COST: z.coerce.number().int().min(4).max(15).default(12),
+    COOKIE_SECURE: booleanString.optional(),
+    // Number of reverse proxies in front of the API (needed for correct client IPs in rate limiting). 0 = none.
+    TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
+    RATE_LIMIT_ENABLED: booleanString.optional(),
   })
   .superRefine((vars, ctx) => {
+    // The .env.example placeholder is long enough to pass the length check, so reject it explicitly.
+    if (vars.JWT_ACCESS_SECRET?.startsWith('replace-with')) {
+      ctx.addIssue({ code: 'custom', path: ['JWT_ACCESS_SECRET'], message: 'is still the .env.example placeholder — generate a real value' });
+    }
+    if (vars.NODE_ENV === 'production') {
+      if (vars.BCRYPT_COST < 12) ctx.addIssue({ code: 'custom', path: ['BCRYPT_COST'], message: 'must be at least 12 in production' });
+      if (vars.COOKIE_SECURE === false) ctx.addIssue({ code: 'custom', path: ['COOKIE_SECURE'], message: 'must not be false in production (HTTPS only)' });
+      if (/test-only/i.test(vars.JWT_ACCESS_SECRET)) ctx.addIssue({ code: 'custom', path: ['JWT_ACCESS_SECRET'], message: 'must not be the test secret in production' });
+    }
     if (vars.NODE_ENV !== 'test') return;
 
     // Safety guard: tests create and delete data, so they must never point at the dev database.
@@ -83,6 +99,13 @@ export function loadEnv(source = process.env) {
     clientOrigin: vars.CLIENT_ORIGIN,
     logLevel: vars.LOG_LEVEL ?? (isTest ? 'silent' : 'info'),
     logPretty: vars.LOG_PRETTY ?? vars.NODE_ENV === 'development',
+    jwtAccessSecret: vars.JWT_ACCESS_SECRET,
+    bcryptCost: vars.BCRYPT_COST,
+    // Secure cookies are only sent over HTTPS. Browsers allow them on http://localhost too,
+    // but we default to false in development so other local hostnames keep working.
+    cookieSecure: vars.COOKIE_SECURE ?? vars.NODE_ENV === 'production',
+    trustProxy: vars.TRUST_PROXY,
+    rateLimitEnabled: vars.RATE_LIMIT_ENABLED ?? true,
   });
 }
 

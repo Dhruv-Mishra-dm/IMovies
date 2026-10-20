@@ -12,6 +12,7 @@ const valid = {
   MONGODB_URI: DEV_URI,
   MONGODB_URI_TEST: TEST_URI,
   CLIENT_ORIGIN: 'http://localhost:5173',
+  JWT_ACCESS_SECRET: 'x'.repeat(40),
 };
 
 function expectInvalid(overrides, pattern) {
@@ -80,6 +81,27 @@ describe('loadEnv()', () => {
 
     it('refuses a database whose name does not end with _test', () => {
       expectInvalid({ NODE_ENV: 'test', MONGODB_URI_TEST: 'mongodb://127.0.0.1:27017/imovies_staging' }, /_test/);
+    });
+  });
+
+  describe('auth settings', () => {
+    it('requires a long JWT secret', () => {
+      expectInvalid({ JWT_ACCESS_SECRET: undefined }, /JWT_ACCESS_SECRET/);
+      expectInvalid({ JWT_ACCESS_SECRET: 'short' }, /JWT_ACCESS_SECRET must be at least 32/);
+      expectInvalid({ JWT_ACCESS_SECRET: 'replace-with-a-long-random-value-from-the-command-above' }, /placeholder/);
+    });
+
+    it('defaults to bcrypt cost 12, insecure cookies in development and secure cookies in production', () => {
+      const dev = loadEnv(valid);
+      assert.equal(dev.bcryptCost, 12);
+      assert.equal(dev.cookieSecure, false);
+      assert.equal(loadEnv({ ...valid, NODE_ENV: 'production' }).cookieSecure, true);
+    });
+
+    it('enforces production safety rules', () => {
+      expectInvalid({ NODE_ENV: 'production', BCRYPT_COST: '10' }, /BCRYPT_COST must be at least 12 in production/);
+      expectInvalid({ NODE_ENV: 'production', COOKIE_SECURE: 'false' }, /COOKIE_SECURE/);
+      expectInvalid({ NODE_ENV: 'production', JWT_ACCESS_SECRET: 'test-only-secret-not-for-production-use-0123456789' }, /test secret/);
     });
   });
 

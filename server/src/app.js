@@ -2,16 +2,24 @@ import { randomUUID } from 'node:crypto';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
+import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import healthRoutes from './routes/health.routes.js';
+import { authRoutes } from './routes/auth.routes.js';
+import { originCheck } from './middleware/originCheck.js';
+import { createRateLimiters } from './middleware/rateLimits.js';
 import { notFound, errorHandler } from './middleware/errorHandlers.js';
 
 // Building the app in a function (separate from listen()) lets tests use it without opening a port.
-export function createApp({ clientOrigin }) {
+export function createApp({ clientOrigin, rateLimitEnabled = env.rateLimitEnabled } = {}) {
   const app = express();
+  const limits = createRateLimiters({ enabled: rateLimitEnabled });
 
   app.disable('x-powered-by');
+  // Behind a reverse proxy (e.g. a hosting platform), trust its X-Forwarded-For so req.ip is the client.
+  app.set('trust proxy', env.trustProxy);
 
   // One structured log line per request, tagged with a request id that is also returned
   // in the X-Request-Id header and in error bodies, so a user-visible error can be found in the logs.
@@ -34,7 +42,7 @@ export function createApp({ clientOrigin }) {
 
   app.use(helmet());
   // Only our React app may call the API from a browser. `credentials: true` lets the
-  // httpOnly auth cookie (added in the auth epic) travel with requests.
+  // httpOnly auth cookies travel with requests.
   // Unknown origins get no CORS headers at all, so the browser blocks them.
   // Requests with no Origin (curl, server-to-server) aren't affected by CORS anyway.
   const allowedOrigins = new Set([clientOrigin]);
@@ -46,8 +54,12 @@ export function createApp({ clientOrigin }) {
     }),
   );
   app.use(express.json({ limit: '100kb' }));
+  app.use(cookieParser());
+  // CSRF protection: state-changing requests must come from our client origin.
+  app.use('/api', originCheck([clientOrigin]));
 
   app.use('/api/health', healthRoutes);
+  app.use('/api/auth', authRoutes({ limits }));
 
   app.use(notFound);
   app.use(errorHandler);

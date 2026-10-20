@@ -86,6 +86,11 @@ It refuses to run when `NODE_ENV=production` and never runs automatically.
 | `MONGODB_URI` | **yes** | `mongodb://127.0.0.1:27017/imovies?replicaSet=rs0` | Development database |
 | `MONGODB_URI_TEST` | for tests | `mongodb://127.0.0.1:27017/imovies_test?replicaSet=rs0` | Must end in `_test` and differ from `MONGODB_URI` |
 | `CLIENT_ORIGIN` | **yes** | `http://localhost:5173` | The only browser origin allowed by CORS (no trailing slash) |
+| `JWT_ACCESS_SECRET` | **yes** | 48 random bytes, base64url | Signs login tokens. Generate with the command in `.env.example`; never commit it |
+| `BCRYPT_COST` | no | `12` | Password hashing work factor (production requires ≥ 12) |
+| `COOKIE_SECURE` | no | `false` (dev), `true` (production) | HTTPS-only cookies |
+| `TRUST_PROXY` | no | `0` | Number of reverse proxies in front of the API |
+| `RATE_LIMIT_ENABLED` | no | `true` | Turn rate limiting off only for local experiments |
 | `LOG_LEVEL` | no | `info` (`silent` in tests) | Log verbosity |
 | `LOG_PRETTY` | no | `true` in development | `false` gives JSON log lines |
 
@@ -99,6 +104,24 @@ Invalid environment configuration:
 
 The client has one optional variable, `VITE_API_URL` (see `client/.env.example`).
 Anything starting with `VITE_` is visible to every browser, so never put secrets there.
+
+## Creating an administrator
+
+Public sign-up always creates **customer** accounts. Administrators are created (or an
+existing account promoted) with a script. Set the values only for the current PowerShell
+session so the password is never written to a file:
+
+```powershell
+cd C:\Users\Lenovo\Desktop\IMovies\server
+$env:ADMIN_EMAIL = "admin@example.com"
+$env:ADMIN_PASSWORD = "choose-a-strong-password-1"   # 8+ chars, a letter and a number
+$env:ADMIN_NAME = "Site Admin"
+npm run create-admin
+Remove-Item Env:ADMIN_PASSWORD, Env:ADMIN_EMAIL, Env:ADMIN_NAME
+```
+
+If the email already belongs to a customer, that account is promoted to administrator, its
+password is left unchanged and its sessions are ended (log in again to get admin access).
 
 ## Running the app
 
@@ -116,7 +139,8 @@ cd C:\Users\Lenovo\Desktop\IMovies\client
 npm run dev
 ```
 
-Open http://localhost:5173. You should see **"API and database are healthy"**.
+Open **http://localhost:5173** (use `localhost`, not `127.0.0.1` — see "How login works").
+The footer's **System status** link (`/status`) should say **"API and database are healthy"**.
 Press `Ctrl+C` in each window to stop.
 
 You can also call the health endpoint directly:
@@ -197,13 +221,31 @@ restarts and even `docker compose down`.
   (`req.validated`), so unknown fields such as `role` are dropped and MongoDB operators
   like `{ "$gt": "" }` are rejected.
 
-## Security plan for authentication (Epic 3)
+## How login works
 
-- Short-lived (15 min) JWT access token plus a rotating refresh token, both in
-  **httpOnly** cookies (JavaScript can't read them, so XSS can't steal them).
-- `SameSite=Strict`; `Secure` (HTTPS-only) in production.
-- **CSRF protection** for state-changing requests (POST/PUT/PATCH/DELETE): the server
-  rejects requests whose `Origin` header is not the allowed client origin, and requires
-  JSON bodies. Together with `SameSite=Strict` this replaces a separate CSRF token.
-- Real secrets (e.g. the JWT signing secret) go only in `server/.env`, never in Git.
-  `.env.example` contains placeholders only.
+- **Two httpOnly cookies** (JavaScript can't read them, so an XSS bug can't steal them):
+  - `imovies_at` — a signed JWT access token valid for **15 minutes**, sent with every request.
+  - `imovies_rt` — a random refresh token valid for **7 days**, sent only to `/api/auth/*`.
+    The database stores only its SHA-256 hash.
+- Both cookies are `SameSite=Strict`, and `Secure` (HTTPS-only) in production.
+- When the access token expires, the React app calls `POST /api/auth/refresh` once and retries
+  the original request. Every refresh **rotates** the refresh token; presenting an already-used
+  refresh token (a sign it was copied) ends that whole login session family.
+- The server reloads the user on every request, so "log out everywhere", a password change
+  or a role change takes effect immediately.
+- **CSRF protection:** every POST/PUT/PATCH/DELETE must carry an `Origin` (or `Referer`)
+  matching `CLIENT_ORIGIN`, otherwise 403. Together with `SameSite=Strict` this replaces a
+  separate CSRF token. (Open the app at `http://localhost:5173`, not `127.0.0.1:5173`, or the
+  origin won't match.)
+- Login and registration are **rate-limited** (10 logins per 15 min per IP + email,
+  5 registrations per hour per IP). Wrong password and unknown email give the same message.
+
+| Endpoint | Access | Purpose |
+|---|---|---|
+| `POST /api/auth/register` | public | Create a customer account and log in |
+| `POST /api/auth/login` | public | Log in |
+| `POST /api/auth/refresh` | refresh cookie | Rotate tokens |
+| `POST /api/auth/logout` | anyone | End this device's session |
+| `POST /api/auth/logout-all` | logged in | End every session |
+| `GET /api/auth/me` · `PATCH /api/auth/me` | logged in | Read / rename the current user |
+| `POST /api/auth/change-password` | logged in | Change password (ends other sessions) |

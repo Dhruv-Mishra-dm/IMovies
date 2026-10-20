@@ -1,4 +1,4 @@
-import { User } from './User.js';
+import { User, ROLES, normalizeEmail } from './User.js';
 import { RefreshSession } from './RefreshSession.js';
 import { Movie } from './Movie.js';
 import { Theatre } from './Theatre.js';
@@ -10,6 +10,7 @@ import { Payment } from './Payment.js';
 import { Refund } from './Refund.js';
 import { AuditLog } from './AuditLog.js';
 
+export { ROLES, normalizeEmail };
 export { User, RefreshSession, Movie, Theatre, Screen, Showtime, SeatReservation, Booking, Payment, Refund, AuditLog };
 
 export const allModels = [User, RefreshSession, Movie, Theatre, Screen, Showtime, SeatReservation, Booking, Payment, Refund, AuditLog];
