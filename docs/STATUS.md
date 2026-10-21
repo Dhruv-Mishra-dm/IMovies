@@ -31,6 +31,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `34470dfb0c0e19ebf3b0ad713959f4e7e495e099` | Epic 10 — admin dashboard and management |
 | `b9ebf5712bf86f98f1b09e5872be3b6031d07671` | Epic 11 — security, testing and optimisation |
 | `53b25c5e4d19bad0f0b88ea5e4a7152bef9ddb2d` | Epic 12 — deployment readiness and documentation |
+| `8d9fbb1b7d35fec0a06addc47cf8c3d206fa5304` | Post-audit 1 — React error boundary |
+| `5d73f77efcf9dce783cb13a9305c456a5c748b42` | Post-audit 2 — repeatable 14-day demo seed |
 
 ## Epic overview
 
@@ -61,7 +63,7 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
 
-## Post-audit improvements
+## Post-audit improvements (Done, `8d9fbb1`, `5d73f77`)
 
 **1. React error boundary.** The final audit found that a page failing to render (for example the lazy-loaded admin code
 chunk failing to download after a rebuild) blanked the whole app. `client/src/components/ErrorBoundary.jsx` now shows
