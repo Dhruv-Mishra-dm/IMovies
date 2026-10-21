@@ -103,3 +103,13 @@ export async function seedCatalogue({ now = clock.now() } = {}) {
 
   return created;
 }
+
+/** How many bookable demo shows lie ahead of `now`, and the IST date of the last one (null if none). */
+export async function upcomingShowtimeSummary({ now = clock.now() } = {}) {
+  const filter = { status: SHOWTIME_STATUS.SCHEDULED, startsAt: { $gt: now } };
+  const [count, last] = await Promise.all([
+    Showtime.countDocuments(filter),
+    Showtime.findOne(filter).sort({ startsAt: -1 }).select('startsAt').lean(),
+  ]);
+  return { count, lastDate: last ? istDateKey(last.startsAt) : null };
+}

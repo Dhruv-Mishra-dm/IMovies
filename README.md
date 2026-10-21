@@ -131,7 +131,7 @@ $secret = node -e "console.log(require('crypto').randomBytes(48).toString('base6
 (Get-Content .env) -replace '^JWT_ACCESS_SECRET=.*', "JWT_ACCESS_SECRET=$secret" | Set-Content .env
 Remove-Variable secret
 
-# 6. Add demo movies, theatres and the next 7 days of showtimes (fictional data)
+# 6. Add demo movies, theatres and the next 14 days of showtimes (fictional data)
 npm run seed
 cd ..
 
@@ -144,8 +144,26 @@ cd ..
 - `.env` holds your local settings and is ignored by Git; never commit it. All other defaults
   in `.env.example` work as-is for local development.
 - The seed only **adds** missing demo records and never overwrites anything, so it is safe to run
-  again (for example every few days, to add new upcoming showtimes). It refuses to run when
-  `NODE_ENV=production` and never runs automatically.
+  again. It refuses to run when `NODE_ENV=production` and never runs automatically.
+
+### Demo data on later dates
+
+Showtimes are created for the **14 days starting the day you run the seed** (IST, at 10:00, 13:30,
+17:15 and 21:00; shows starting within 30 minutes are skipped). To demo on a later date, run the seed
+again shortly before — for example on the morning of the demo:
+
+```powershell
+cd C:\Users\Lenovo\Desktop\IMovies\server
+npm run seed
+```
+
+It prints how many upcoming showtimes exist and the date of the last one. Re-running only adds
+showtimes for dates that don't have them yet: movies, theatres and screens are never duplicated or
+overwritten, admin edits are kept, and accounts, bookings, payments and refunds are never touched.
+Past showtimes simply stay in the past (they appear in booking history and on the admin pages).
+
+Movie release dates are fixed when a movie is first created. Weeks later, the two "coming soon" demo
+movies will have been released and show as "now showing".
 
 ### Environment variables (server)
 
@@ -431,7 +449,7 @@ safe on several instances.
 | Port already in use | Another process uses 5000/5173 → stop it or change `PORT` (and Vite's proxy target via `API_PROXY_TARGET`) |
 | `npm test` says the test database is refused | `MONGODB_URI_TEST` must end in `_test` and differ from `MONGODB_URI` — this protects your data |
 | "Live updates paused" on the seat map | The socket can't connect (API restarting or proxy issue); seats still update after actions, and live updates resume automatically |
-| No showtimes appear | The seed created shows for 7 days from when it ran → run `npm run seed` again |
+| No showtimes appear | The seed creates shows for 14 days from when it ran → run `npm run seed` again (see "Demo data on later dates") |
 | `429 RATE_LIMITED` while testing logins | Too many attempts; wait 15 minutes or restart the API (limits are in memory) |
 | PowerShell blocks `npm` scripts | Use `npm.cmd …`, or allow scripts for your user: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 

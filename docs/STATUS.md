@@ -71,6 +71,13 @@ error) and an outer one in `main.jsx` is the last line of defence. 4 tests in `E
 failed-chunk case. Verified in Chrome on a production build (admin chunk file hidden → fallback with header intact;
 chunk restored → Reload loaded the dashboard).
 
+**2. Repeatable demo data.** The seed already worked relative to the day it runs and was idempotent; it just needed
+re-running before each demo. Its window is now **14 days** (`SEED_DAYS`, matching the site's 14-day date picker), and
+it prints the number of upcoming shows and the last date (`upcomingShowtimeSummary`). New test: re-seeding 30 days
+later (fixed simulated dates, no real time) adds shows only for the new dates, duplicates no movie/theatre/screen or
+(screen, start time), keeps accounts, and a further run adds nothing. README "Demo data on later dates" explains it.
+Limitation: movie release dates are fixed at first seed, so "coming soon" demo movies become "now showing" over time.
+
 ## Epic 12 — deployment readiness and documentation (Done)
 
 **Added.** Optional `CLIENT_DIST_DIR`: the API serves the built React app from its own origin (strict page CSP:
@@ -335,7 +342,7 @@ the clock instead of sleeping.
 
 `cd server; npm run seed` adds 10 published fictional movies (2 "coming soon") + 1 draft, 4 theatres in Mumbai,
 Bengaluru and Delhi, 6 screens (two layouts with Classic/Prime/Recliner seats, accessible and out-of-service seats),
-and showtimes for the next 7 days (IST slots 10:00, 13:30, 17:15, 21:00). Posters/backdrops are original SVGs in
+and showtimes for the next 14 days (IST slots 10:00, 13:30, 17:15, 21:00; was 7 until the post-audit change). Posters/backdrops are original SVGs in
 `client/public/posters` and `client/public/backdrops`. The seed is idempotent and never overwrites existing records.
 It refuses to run when `NODE_ENV=production` and never runs on server start.
 

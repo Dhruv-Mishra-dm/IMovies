@@ -237,4 +237,5 @@ export const theatres = [
 
 /** IST start times used for every screen every day. Gaps fit any film ≤ 195 min plus turnaround. */
 export const DAILY_SLOTS = ['10:00', '13:30', '17:15', '21:00'];
-export const SEED_DAYS = 7;
+/** Days of showtimes each seed run makes sure exist, counted from the day it runs (matches the site's 14-day date picker). */
+export const SEED_DAYS = 14;
