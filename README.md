@@ -328,6 +328,21 @@ Rules (approved decisions 2, 4, 5) and safety guarantees:
 - **Recovery jobs** (every 15 s): expire holds, mark interrupted payments as failed, retry
   refunds the provider failed, resume interrupted show cancellations.
 
+## Administration
+
+Log in with an administrator account (see "Creating an administrator") and use the **Admin**
+link in the header (`/admin`). Every admin API checks the role on the server.
+
+| Page | What you can do |
+|---|---|
+| Dashboard | Net revenue (demo payments − refunds, last 30 days), tickets sold, 7-day occupancy, upcoming shows, top movies, recent bookings — all computed from the database |
+| Movies | Search/filter, create (as draft), edit, publish, archive (refused while upcoming shows exist), delete never-scheduled drafts |
+| Theatres & screens | Create/edit/activate/deactivate theatres; add or edit screens with the **seat-layout editor** (categories, rows, aisles, indents, wheelchair and out-of-service seats, live preview). Layout edits only affect shows scheduled afterwards |
+| Showtimes | List/filter, schedule (IST date and time, a price per seat category in rupees; overlaps incl. 15 min turnaround are refused), edit prices, **cancel a show** (all its bookings are cancelled and paid ones refunded; the result is reported and can be retried) |
+| Bookings | Find by reference, customer email or name, or status; view customer, seats, payment attempts and refunds |
+
+Extra admin API: `GET /api/admin/stats`, `GET /api/admin/bookings?q=&status=&showtime=&page=`, `GET /api/admin/bookings/:id`.
+
 ## Real-time seat updates (Socket.IO)
 
 The seat map updates live while you look at it. The server pushes notifications over Socket.IO

@@ -8,9 +8,9 @@ Only features whose acceptance criteria are verified are marked **Done**.
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Last completed epic | Epic 8 — real-time seat availability (Socket.IO) |
-| Current epic | Epic 10 — admin dashboard and management UI |
-| Next steps | Admin API additions (booking lookup/detail, dashboard statistics), then admin UI: dashboard, movies, theatres & screens (seat-layout editor), showtimes (create/edit/cancel), bookings. Then Epic 11 (security review, `npm audit`, mobile check) and Epic 12 (docs). |
+| Last completed epic | Epic 10 — admin dashboard and management UI |
+| Current epic | Epic 11 — security, testing and optimisation |
+| Next steps | Security review against the spec's checklist, `npm audit` (both apps), mobile/responsive check, production hardening (CSP for static hosting, `trust proxy`), any defects found. Then Epic 12 (final README/deployment guide, `.env.example`, troubleshooting). |
 | Dev environment | Start Docker Desktop first (MongoDB runs in it). Dev servers: `cd server; npm run dev` and `cd client; npm run dev`. |
 
 To resume: `git status`, `git log --oneline -5`, read this file, run the checks in "Latest verified results", continue with the current epic.
@@ -27,7 +27,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `a1dcfe25d2356f29270fefc946f315bab19acb8c` | Epic 5 — theatres, screens and show scheduling |
 | `0005a059691b0a7b9d7c6cafc3bc07034ba0aa0b` | Epic 6 — seat inventory and booking engine |
 | `42ba9316cd5525248a7d17d675432a9210ee5cd4` | Epics 7 & 9 — payments, cancellations, refunds, booking history |
-| _(see `git log`)_ | Epic 8 — real-time seat availability |
+| `40e0694674f5a9f8a0bcf81fe47c51f19604977e` | Epic 8 — real-time seat availability |
+| _(see `git log`)_ | Epic 10 — admin dashboard and management |
 
 ## Epic overview
 
@@ -40,10 +41,10 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | 5 | Theatres, screens and show scheduling | **Done** (`a1dcfe2`; cancellation → Epic 7) |
 | 6 | Seat inventory and booking engine | **Done** (`0005a05`) |
 | 7 | Payment simulation and booking confirmation (+ cancellations, refunds, admin show cancellation API) | **Done** (`42ba931`) |
-| 8 | Real-time seat availability (Socket.IO) | **Done** |
+| 8 | Real-time seat availability (Socket.IO) | **Done** (`40e0694`) |
 | 9 | Customer dashboard and booking history | **Done** (delivered with Epic 7; account page from Epic 3) |
-| 10 | Admin dashboard | In progress |
-| 11 | Security, testing and optimization | Pending |
+| 10 | Admin dashboard | **Done** |
+| 11 | Security, testing and optimization | In progress |
 | 12 | Deployment and documentation | Pending |
 
 ## Approved business decisions (confirmed by project owner, 2026-10-21)
@@ -58,7 +59,30 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
 
-## Epic 8 — real-time seat availability (Done)
+## Epic 10 — admin dashboard and management (Done)
+
+**Backend.** `services/adminService.js` + `routes/admin.routes.js` (`requireAdmin` on the router): dashboard stats
+computed from the database (captured payments and successful refunds in the last 30 days, tickets of still-confirmed
+bookings, booked/bookable seats over the next 7 days, top movies, recent bookings) and booking lookup (reference,
+customer email/name, status, show) with detail (payments, refunds, show status).
+
+**Frontend.** Lazy-loaded admin area (`pages/admin/*`, `routes.jsx`; separate JS chunks, `Suspense` inside the admin
+layout so the admin navigation stays visible): Dashboard (stat tiles, top movies, recent bookings), Movies (filter,
+publish/archive/delete with confirmation, create/edit form with client + server field validation), Theatres & screens
+(create/edit, activate/deactivate with confirmation, seat-layout editor with live `SeatMap` preview and server
+validation messages; `utils/seatLayout.js` builds/describes layouts and converts rupees ↔ paise), Showtimes (filters,
+schedule form pricing every category of the chosen screen, edit-prices dialog, cancel dialog with required reason and
+outcome report, retry for incomplete cancellations), Bookings (search, detail).
+
+**Verified.** Server 176 tests (3 new: admin-only, exact stats against crafted data, booking search/detail). Client
+87 tests (9 new). **Browser (admin):** a test account promoted with `npm run create-admin`; dashboard showed real
+figures (₹500 paid − ₹500 refunded from the earlier journey); scheduling an overlapping time was refused with the
+overlap message; a free slot was scheduled (prices ₹150/₹220/₹399.50 stored as 15000/22000/39950 paise); that show was
+cancelled through the dialog ("0 bookings cancelled, 0 refunds" — correct, it had none); the screen editor loaded an
+existing layout (52 bookable seats). Fixed during the epic: lint "impure function during render" (date default),
+search history spam, started shows shown with a success badge.
+
+## Epic 8 — real-time seat availability (Done, `40e0694`)
 
 **Backend.** `sockets/realtime.js` attached to the HTTP server in `server.js` (closed on shutdown): `allowRequest`
 rejects any Origin other than `CLIENT_ORIGIN`; the access cookie identifies the user (invalid/expired → anonymous);
@@ -277,9 +301,9 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 
 | Check | Command | Result |
 |---|---|---|
-| Backend tests | `cd server; npm test` | **173 passed**, 0 failed, 0 skipped |
+| Backend tests | `cd server; npm test` | **176 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
-| Frontend tests | `cd client; npm test` | **78 passed**, 0 failed |
+| Frontend tests | `cd client; npm test` | **87 passed**, 0 failed |
 | Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
 | Browser check | Chrome via browser integration | Full customer journey + two-client real-time verified; mobile width not verified |
 

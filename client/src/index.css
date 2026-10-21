@@ -6,6 +6,7 @@
 @import './styles/movies.css';
 @import './styles/cinema.css';
 @import './styles/booking.css';
+@import './styles/admin.css';
 
 /* ---------- System status (from Epic 0, now at /status) ---------- */
 .status {

@@ -30,7 +30,8 @@ function stateOf(seat, takenStates, selected) {
 export default function SeatMap({ seatMap, prices = [], takenStates = {}, selected = new Set(), onToggle }) {
   const interactive = typeof onToggle === 'function'
   const priceOf = useMemo(() => new Map(prices.map((p) => [p.category, p])), [prices])
-  const maxCol = useMemo(() => Math.max(...seatMap.rows.flatMap((r) => r.seats.map((s) => s.col))), [seatMap])
+  // At least one column, so an empty (half-edited) layout in the admin preview still renders.
+  const maxCol = useMemo(() => Math.max(1, ...seatMap.rows.flatMap((r) => r.seats.map((s) => s.col))), [seatMap])
   const rows = useMemo(
     () => seatMap.rows.map((row) => ({ label: row.label, seats: row.seats.map((s) => ({ ...s, id: `${row.label}${s.number}` })) })),
     [seatMap],
@@ -75,7 +76,7 @@ export default function SeatMap({ seatMap, prices = [], takenStates = {}, select
                   const label = [
                     `Row ${row.label} seat ${seat.number}`,
                     price?.name ?? seat.category,
-                    price && formatPrice(price.amount),
+                    price?.amount !== undefined && formatPrice(price.amount),
                     seat.accessible && 'wheelchair accessible',
                     SEAT_STATE_LABELS[state],
                   ]

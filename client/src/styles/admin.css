@@ -1,0 +1,125 @@
+/* ---------- Admin shell ---------- */
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  margin-bottom: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.admin-nav a {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-weight: 600;
+}
+.admin-nav a.active {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.admin-nav a:hover {
+  color: var(--text);
+}
+
+/* ---------- Stat tiles ---------- */
+.stat-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  margin-bottom: var(--space-6);
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+}
+.stat-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: var(--space-1) 0;
+  font-variant-numeric: tabular-nums;
+}
+.stat-note {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  margin: 0;
+}
+
+/* ---------- Forms ---------- */
+.form-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+.form-grid .span-all {
+  grid-column: 1 / -1;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+}
+.checkbox-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+}
+.checkbox-group input {
+  accent-color: var(--accent);
+}
+
+/* ---------- Layout editor ---------- */
+.row-editor {
+  display: grid;
+  gap: var(--space-2);
+}
+.row-editor-row {
+  display: grid;
+  grid-template-columns: 4rem 8rem 9rem 5rem repeat(3, minmax(6rem, 1fr)) auto;
+  gap: var(--space-2);
+  align-items: end;
+}
+.row-editor-row .input,
+.row-editor-row .select {
+  min-height: 2.25rem;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+}
+.row-editor-head {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+@media (max-width: 900px) {
+  .row-editor-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .row-editor-head {
+    display: none;
+  }
+}
+.actions-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
