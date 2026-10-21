@@ -60,6 +60,25 @@
   color: var(--text);
 }
 
+/* ---------- Live status ---------- */
+.live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.live-status .dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+.live-live .dot {
+  background: var(--success);
+}
+.live-offline .dot {
+  background: var(--warning);
+}
+
 /* ---------- My bookings ---------- */
 .booking-list {
   list-style: none;

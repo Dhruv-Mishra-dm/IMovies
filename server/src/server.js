@@ -4,6 +4,7 @@ import { connectDB, disconnectDB } from './config/db.js';
 import { ensureIndexes } from './models/index.js';
 import { createApp } from './app.js';
 import { startHoldSweeper } from './jobs/holdSweeper.js';
+import { attachRealtime } from './sockets/realtime.js';
 import { sweepExpiredHolds } from './services/holdService.js';
 import { failStalePayments } from './services/paymentService.js';
 import { retryPendingRefunds } from './services/refundService.js';
@@ -26,6 +27,7 @@ async function start() {
   const server = app.listen(env.port, () => {
     logger.info(`API listening on http://localhost:${env.port} (${env.nodeEnv})`);
   });
+  const realtime = attachRealtime(server, { clientOrigin: env.clientOrigin });
 
   // Background clean-up and recovery (all idempotent and safe with several server instances).
   const stopSweeper = startHoldSweeper({
@@ -44,6 +46,7 @@ async function start() {
     shuttingDown = true;
     logger.info(`${signal} received, shutting down...`);
     stopSweeper();
+    realtime.close(); // disconnects sockets so server.close() can finish
 
     // If open connections keep the server alive too long, exit anyway.
     setTimeout(() => {

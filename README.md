@@ -328,6 +328,28 @@ Rules (approved decisions 2, 4, 5) and safety guarantees:
 - **Recovery jobs** (every 15 s): expire holds, mark interrupted payments as failed, retry
   refunds the provider failed, resume interrupted show cancellations.
 
+## Real-time seat updates (Socket.IO)
+
+The seat map updates live while you look at it. The server pushes notifications over Socket.IO
+(path `/socket.io`; in development Vite proxies it to the API, including the WebSocket upgrade).
+
+| Direction | Event | Meaning |
+|---|---|---|
+| client → server | `showtime:join` (showtimeId, ack) · `showtime:leave` | Start/stop watching one show (max 3 at a time) |
+| server → client | `seats:changed` `{ showtimeId, changes: [{ seatId, state }] }` | Seats became `held`, `booked` or `available` |
+| server → client | `showtime:cancelled` `{ showtimeId }` | The cinema cancelled the show |
+| server → client | `booking:updated` `{ bookingId, status }` | One of **your** bookings changed (sent only to you) |
+
+- Events are sent **only after the database transaction committed**, so a seat is never announced
+  as booked when the booking failed.
+- Clients can only listen: there is no event a browser can send to change seats.
+- Connections are accepted only from `CLIENT_ORIGIN`; the login cookie identifies the user (anonymous
+  visitors can watch seat maps but get no personal events). Joining requires a real, published show.
+- Events are hints, not the source of truth: the page applies them instantly, then refetches
+  `GET /api/showtimes/:id/seats`, and refetches again after every (re)connection, so missed,
+  duplicated or out-of-order events can't leave a stale seat map.
+- The small indicator under the prices shows "Live seat updates" or "Live updates paused — reconnecting".
+
 ## Theatres and showtimes API
 
 | Endpoint | Access | Purpose |

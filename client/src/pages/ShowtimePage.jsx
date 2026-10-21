@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { getShowtime } from '../api/cinema.js'
@@ -6,6 +6,7 @@ import { getSeatAvailability, createBooking, releaseBooking } from '../api/booki
 import { errorMessage } from '../api/client.js'
 import { useApiResource } from '../hooks/useApiResource.js'
 import { useAuth } from '../hooks/useAuth.js'
+import { useShowtimeLive } from '../hooks/useShowtimeLive.js'
 import SeatMap from '../components/showtimes/SeatMap.jsx'
 import Button from '../components/ui/Button.jsx'
 import Alert from '../components/ui/Alert.jsx'
@@ -53,7 +54,47 @@ export default function ShowtimePage() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState(null)
 
-  const takenStates = useMemo(() => (seats.result?.ok ? seats.result.data.seats : seats.previous?.data?.seats ?? {}), [seats.result, seats.previous])
+  // Real-time: apply incoming changes instantly on top of the last fetched state, then refetch the
+  // authoritative state shortly after (events are hints; the API is the truth).
+  const fetched = seats.result ?? seats.previous
+  const [live, setLive] = useState({ base: null, states: {} })
+  const fetchedRef = useRef(fetched)
+  const reloadTimer = useRef(null)
+  useEffect(() => {
+    fetchedRef.current = fetched
+  })
+  useEffect(() => () => clearTimeout(reloadTimer.current), [])
+  const scheduleReload = () => {
+    clearTimeout(reloadTimer.current)
+    reloadTimer.current = setTimeout(() => seats.reload(), 400)
+  }
+  const liveStatus = useShowtimeLive(id, {
+    onSeats: (changes) => {
+      setLive((prev) => ({
+        base: fetchedRef.current,
+        states: { ...(prev.base === fetchedRef.current ? prev.states : {}), ...Object.fromEntries(changes.map((c) => [c.seatId, c.state])) },
+      }))
+      scheduleReload()
+    },
+    onResync: () => seats.reload(),
+    onCancelled: () => {
+      toast.warning('This show has just been cancelled by the cinema.')
+      showtime.reload()
+      seats.reload()
+    },
+  })
+
+  const takenStates = useMemo(() => {
+    const base = fetched?.ok ? { ...fetched.data.seats } : {}
+    // Overrides only apply on top of the fetch they arrived after; a newer fetch already includes them.
+    if (live.base === fetched) {
+      for (const [seatId, state] of Object.entries(live.states)) {
+        if (state === 'available') delete base[seatId]
+        else if (base[seatId] !== 'mine') base[seatId] = state
+      }
+    }
+    return base
+  }, [fetched, live])
   // Drop selected seats that have meanwhile been taken by someone else.
   const stillFree = [...selected].filter((seatId) => !takenStates[seatId])
   if (stillFree.length !== selected.size) {
@@ -176,6 +217,10 @@ export default function ShowtimePage() {
             </li>
           ))}
           {open && <li>Select up to {MAX_SEATS} seats</li>}
+          <li className={`live-status live-${liveStatus}`}>
+            <span className="dot" aria-hidden="true" />
+            {liveStatus === 'live' ? 'Live seat updates' : liveStatus === 'connecting' ? 'Connecting to live updates…' : 'Live updates paused — reconnecting'}
+          </li>
         </ul>
         {/* Never show seats as free before we know which are taken. */}
         {!seats.result && !seats.previous ? (

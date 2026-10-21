@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import { getBooking, cancelBooking } from '../api/bookings.js'
 import { errorMessage } from '../api/client.js'
 import { useApiResource } from '../hooks/useApiResource.js'
+import { useBookingUpdates } from '../hooks/useShowtimeLive.js'
 import BookingSummary from '../components/bookings/BookingSummary.jsx'
 import Button from '../components/ui/Button.jsx'
 import Alert from '../components/ui/Alert.jsx'
@@ -68,6 +69,9 @@ export default function BookingDetailPage() {
   const { id } = useParams()
   const [params] = useSearchParams()
   const { result, reload } = useApiResource((signal) => getBooking(id, signal), id)
+  useBookingUpdates((update) => {
+    if (update.bookingId === id) reload()
+  })
 
   if (!result) return <PageLoader label="Loading your booking…" />
   if (!result.ok) {

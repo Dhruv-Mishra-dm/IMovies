@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import { getBooking, releaseBooking } from '../api/bookings.js'
 import { errorMessage } from '../api/client.js'
 import { useApiResource } from '../hooks/useApiResource.js'
+import { useBookingUpdates } from '../hooks/useShowtimeLive.js'
 import HoldCountdown from '../components/bookings/HoldCountdown.jsx'
 import BookingSummary from '../components/bookings/BookingSummary.jsx'
 import DemoPaymentPanel from '../components/bookings/DemoPaymentPanel.jsx'
@@ -18,6 +19,10 @@ export default function CheckoutPage() {
   const [expired, setExpired] = useState(false)
   const [confirmRelease, setConfirmRelease] = useState(false)
   const [releasing, setReleasing] = useState(false)
+  // e.g. the hold expired, or the cinema cancelled the show: refresh from the server.
+  useBookingUpdates((update) => {
+    if (update.bookingId === id) reload()
+  })
 
   if (!result) return <PageLoader label="Loading your booking…" />
   if (!result.ok) {

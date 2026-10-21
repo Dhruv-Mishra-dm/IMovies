@@ -27,11 +27,13 @@
     "mongoose": "^9.11.2",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
+    "socket.io": "^4.8.4",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "oxlint": "^1.87.0",
     "pino-pretty": "^13.2.0",
+    "socket.io-client": "^4.8.4",
     "supertest": "^7.3.1"
   }
 }

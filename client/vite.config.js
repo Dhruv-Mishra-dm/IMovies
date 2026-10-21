@@ -15,6 +15,12 @@ export default defineConfig({
         target: process.env.API_PROXY_TARGET ?? 'http://localhost:5000',
         changeOrigin: true,
       },
+      // Socket.IO (real-time seat updates) uses WebSockets, which the proxy must upgrade.
+      '/socket.io': {
+        target: process.env.API_PROXY_TARGET ?? 'http://localhost:5000',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   // Vitest reads this block: run component tests in a simulated browser (jsdom).
