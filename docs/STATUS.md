@@ -61,6 +61,16 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
 
+## Post-audit improvements
+
+**1. React error boundary.** The final audit found that a page failing to render (for example the lazy-loaded admin code
+chunk failing to download after a rebuild) blanked the whole app. `client/src/components/ErrorBoundary.jsx` now shows
+"Something went wrong" with **Reload page** and **Go to the home page**; it never shows the error message or stack.
+One boundary wraps the page area in `AppLayout` (header/footer keep working; navigating to another URL clears the
+error) and an outer one in `main.jsx` is the last line of defence. 4 tests in `ErrorBoundary.test.jsx`, including the
+failed-chunk case. Verified in Chrome on a production build (admin chunk file hidden → fallback with header intact;
+chunk restored → Reload loaded the dashboard).
+
 ## Epic 12 — deployment readiness and documentation (Done)
 
 **Added.** Optional `CLIENT_DIST_DIR`: the API serves the built React app from its own origin (strict page CSP:
@@ -351,7 +361,7 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 |---|---|---|
 | Backend tests | `cd server; npm test` | **189 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
-| Frontend tests | `cd client; npm test` | **88 passed**, 0 failed |
+| Frontend tests | `cd client; npm test` | **92 passed**, 0 failed |
 | Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
 | Dependency audit | `npm audit` (both) | 0 vulnerabilities |
 | Browser check | Chrome via browser integration | Customer journey, two-client real-time, admin flows, 390 px mobile layout, production-mode single-origin build verified |

@@ -1,7 +1,9 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import ErrorBoundary from '../ErrorBoundary.jsx'
 import SiteHeader from './SiteHeader.jsx'
 
 export default function AppLayout() {
+  const { pathname } = useLocation()
   return (
     <div className="app">
       <a href="#main" className="skip-link">
@@ -9,7 +11,11 @@ export default function AppLayout() {
       </a>
       <SiteHeader />
       <main id="main" tabIndex={-1}>
-        <Outlet />
+        {/* A page that fails to render shows a fallback; header and footer keep working, and moving to
+            another page clears the error. */}
+        <ErrorBoundary resetKey={pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
       <footer className="site-footer">
         <div className="container">
