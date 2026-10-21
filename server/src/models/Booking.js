@@ -48,7 +48,7 @@ const bookingSchema = new mongoose.Schema(
       type: [bookedSeatSchema],
       validate: [(v) => v.length >= 1, 'A booking needs at least one seat'],
     },
-    // Sum of seat prices, no taxes or fees (approved decision 3). Integer paise.
+    // Sum of seat prices, no taxes or fees (business rule 3). Integer paise.
     totalAmount: { type: Number, required: true, min: 0, validate: Number.isInteger },
     currency: { type: String, enum: [CURRENCY], default: CURRENCY },
     snapshot: { type: snapshotSchema, required: true },

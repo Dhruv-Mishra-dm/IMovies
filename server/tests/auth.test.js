@@ -140,7 +140,7 @@ describe('authentication API', () => {
     });
   });
 
-  describe('refresh-token rotation (approved decision 1)', () => {
+  describe('refresh-token rotation (business rule 1)', () => {
     it('issues a new refresh token on every refresh', async () => {
       const { client } = await registeredCustomer(app);
       const first = cookieValue(client, 'imovies_rt');

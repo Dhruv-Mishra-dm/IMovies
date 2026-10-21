@@ -1,4 +1,4 @@
-// Display helpers. All cinema times are shown in India Standard Time (approved decision 3),
+// Display helpers. All cinema times are shown in India Standard Time (business rule 3),
 // whatever time zone the visitor's computer uses.
 export const TIME_ZONE = 'Asia/Kolkata'
 

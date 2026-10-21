@@ -70,7 +70,7 @@ describe('payments, cancellations and refunds', () => {
       assert.deepEqual(events[0].payload.changes.map((c) => c.state), ['booked', 'booked']);
     });
 
-    it('records a declined payment, keeps the hold, and allows a retry that succeeds (decision 4)', async () => {
+    it('records a declined payment, keeps the hold, and allows a retry that succeeds (business rule 4)', async () => {
       const { client, booking } = await heldBooking();
       const declined = await pay(client, booking.id, 'DECLINED');
       assert.equal(declined.status, 201);
@@ -200,7 +200,7 @@ describe('payments, cancellations and refunds', () => {
     });
   });
 
-  describe('customer cancellation (decision 2)', () => {
+  describe('customer cancellation (business rule 2)', () => {
     it('cancels at least 120 minutes before the show with a full refund, and frees exactly those seats', async () => {
       const { client, booking, showtime } = await heldBooking({ startsInMinutes: 121 });
       await pay(client, booking.id);
@@ -264,7 +264,7 @@ describe('payments, cancellations and refunds', () => {
     });
   });
 
-  describe('admin showtime cancellation (decision 5)', () => {
+  describe('admin showtime cancellation (business rule 5)', () => {
     it('cancels the show, every affected booking, refunds paid ones once, and blocks new bookings', async () => {
       const showtime = await createShowtime();
       const paid = await registeredCustomer(app);

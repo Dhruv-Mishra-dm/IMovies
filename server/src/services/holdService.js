@@ -93,7 +93,7 @@ function priceSeats(showtime, seatIds) {
 }
 
 /**
- * Holds seats for 10 minutes and creates a HELD booking (see the Epic 6 notes in docs/STATUS.md).
+ * Holds seats for 10 minutes and creates a HELD booking (see "Concurrency" in docs/ARCHITECTURE.md).
  * The browser only sends seat ids; prices, total and owner come from the server.
  */
 export async function createHold(user, { showtimeId, seatIds }) {

@@ -75,7 +75,7 @@ export async function updateShowtime(req, res) {
   res.json({ showtime: await showtimes.updateShowtime(req.validated.params.id, req.validated.body, req.user._id) });
 }
 
-/** Approved decision 5. Responds with the outcome; `cancellation.progress` is COMPLETED or PARTIAL (retry). */
+/** Business rule 5. Responds with the outcome; `cancellation.progress` is COMPLETED or PARTIAL (retry). */
 export async function cancelShowtime(req, res) {
   const showtime = await cancelShowtimeAndBookings(req.user._id, req.validated.params.id, req.validated.body);
   res.json({ showtime: { id: showtime.id, status: showtime.status, cancellation: showtime.cancellation } });

@@ -76,7 +76,7 @@ export async function refresh(rawToken, { userAgent } = {}) {
     if (now - session.usedAt <= REFRESH_RACE_GRACE_MS) {
       throw new AppError(409, 'REFRESH_CONFLICT', 'Session was refreshed by another request; retry');
     }
-    // Reuse of a rotated token = likely stolen. Revoke every token in the family (decision 1).
+    // Reuse of a rotated token = likely stolen. Revoke every token in the family (business rule 1).
     await RefreshSession.updateMany({ familyId: session.familyId, revokedAt: null }, { $set: { revokedAt: now } });
     logger.warn({ userId: String(session.user), familyId: session.familyId }, 'Refresh token reuse detected; session family revoked');
     throw new AppError(401, 'REFRESH_REUSED', 'Your session has ended for security reasons. Please log in again');

@@ -10,7 +10,7 @@ import { recordRefund, processRefund } from './refundService.js';
 import { audit } from './auditService.js';
 
 /**
- * Approved decision 2: a customer may cancel a CONFIRMED booking only if the show starts at least
+ * Business rule 2: a customer may cancel a CONFIRMED booking only if the show starts at least
  * 120 minutes from now (server time); they then get a full (simulated) refund.
  */
 export function cancellationEligibility(booking, now = clock.now()) {
@@ -126,7 +126,7 @@ async function processShowtimeCancellation(showtime, adminId) {
 }
 
 /**
- * Approved decision 5: an admin cancels a showtime; every affected booking is cancelled and paid
+ * Business rule 5: an admin cancels a showtime; every affected booking is cancelled and paid
  * ones are refunded (simulated).
  *
  * Step 1 (one transaction): mark the show CANCELLED. From that moment no hold or payment can commit

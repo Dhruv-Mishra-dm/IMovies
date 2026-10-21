@@ -8,7 +8,7 @@
 @import './styles/booking.css';
 @import './styles/admin.css';
 
-/* ---------- System status (from Epic 0, now at /status) ---------- */
+/* ---------- System status page (/status) ---------- */
 .status {
   display: flex;
   align-items: center;

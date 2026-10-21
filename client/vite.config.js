@@ -8,8 +8,8 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     // In development the browser calls /api on the Vite server (same origin),
-    // and Vite forwards it to Express. Same-origin means the auth cookie in
-    // Epic 1 works with SameSite=Strict/Lax and no cross-site cookie tricks.
+    // and Vite forwards it to Express. Same-origin means the SameSite=Strict auth
+    // cookies work without any cross-site cookie configuration.
     proxy: {
       '/api': {
         target: process.env.API_PROXY_TARGET ?? 'http://localhost:5000',

@@ -7,7 +7,7 @@ import { seatLayoutSchema } from './seatLayoutSchema.js';
 const priceSchema = new mongoose.Schema(
   {
     category: { type: String, required: true },
-    // Integer paise (approved decision 3). Prices are copied into each booking when it is created,
+    // Integer paise (business rule 3). Prices are copied into each booking when it is created,
     // so later price edits never change what an existing booking was charged.
     amount: { type: Number, required: true, validate: [isValidPaise, 'Price must be whole paise between 0 and ₹10,000'] },
   },

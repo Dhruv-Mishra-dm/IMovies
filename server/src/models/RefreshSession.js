@@ -4,7 +4,7 @@ import { schemaOptions } from './shared.js';
 // One document per issued refresh token. Only a SHA-256 hash of the token is stored, so a database
 // leak doesn't hand out usable tokens. Tokens rotate: each refresh marks the old one `usedAt` and
 // issues a new one in the same `familyId`. Presenting an already-used token means it was stolen and
-// replayed, so the whole family is revoked (approved decision 1).
+// replayed, so the whole family is revoked (business rule 1).
 const refreshSessionSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
