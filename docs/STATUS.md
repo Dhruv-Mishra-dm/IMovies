@@ -30,7 +30,7 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `40e0694674f5a9f8a0bcf81fe47c51f19604977e` | Epic 8 — real-time seat availability |
 | `34470dfb0c0e19ebf3b0ad713959f4e7e495e099` | Epic 10 — admin dashboard and management |
 | `b9ebf5712bf86f98f1b09e5872be3b6031d07671` | Epic 11 — security, testing and optimisation |
-| _(see `git log`)_ | Epic 12 — deployment readiness and documentation |
+| `53b25c5e4d19bad0f0b88ea5e4a7152bef9ddb2d` | Epic 12 — deployment readiness and documentation |
 
 ## Epic overview
 
@@ -76,6 +76,9 @@ deployed**), troubleshooting, known limitations. `.env.example` documents `CLIEN
 **Verified.** Built the client and ran the server with `NODE_ENV=production` on :5050 locally: pages and client-side
 routes load (Chrome, no console errors), CSP header present, live seat updates connect over the same origin,
 registration cookies are `HttpOnly; Secure; SameSite=Strict`. The temporary server was stopped afterwards.
+**Clean clone:** following the README setup on a fresh `git clone` (npm ci, `.env` from the example, secret generated
+with the documented command) gave server lint 0 and 189/189 tests, client 88/88 tests and a successful build; no `.env`
+file is tracked.
 
 ## Epic 11 — security, testing and optimisation (Done)
 
