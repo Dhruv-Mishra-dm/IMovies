@@ -13,11 +13,12 @@ import { cinemaRoutes, adminCinemaRoutes } from './routes/cinema.routes.js';
 import { bookingRoutes } from './routes/bookings.routes.js';
 import { adminRoutes } from './routes/admin.routes.js';
 import { originCheck } from './middleware/originCheck.js';
+import { staticSite } from './middleware/staticSite.js';
 import { createRateLimiters } from './middleware/rateLimits.js';
 import { notFound, errorHandler } from './middleware/errorHandlers.js';
 
 // Building the app in a function (separate from listen()) lets tests use it without opening a port.
-export function createApp({ clientOrigin, rateLimitEnabled = env.rateLimitEnabled } = {}) {
+export function createApp({ clientOrigin, rateLimitEnabled = env.rateLimitEnabled, clientDistDir = env.clientDistDir } = {}) {
   const app = express();
   const limits = createRateLimiters({ enabled: rateLimitEnabled });
 
@@ -70,6 +71,9 @@ export function createApp({ clientOrigin, rateLimitEnabled = env.rateLimitEnable
   app.use('/api', cinemaRoutes());
   app.use('/api/admin', adminCinemaRoutes());
   app.use('/api/admin', adminRoutes());
+
+  // Production option: also serve the built website from this origin (see README "Deployment").
+  if (clientDistDir) app.use(staticSite(clientDistDir));
 
   app.use(notFound);
   app.use(errorHandler);

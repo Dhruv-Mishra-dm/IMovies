@@ -8,9 +8,9 @@ Only features whose acceptance criteria are verified are marked **Done**.
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Last completed epic | Epic 11 — security, testing and optimisation |
-| Current epic | Epic 12 — deployment readiness and documentation |
-| Next steps | README: full overview/features/architecture, deployment guide (hosting options, CSP for the static frontend, HTTPS/cookies, `TRUST_PROXY`, Socket.IO hosting caveats, MongoDB Atlas/replica set), troubleshooting, known limitations; verify setup instructions from a clean clone; final report. |
+| Last completed epic | Epic 12 — deployment readiness and documentation (all epics done) |
+| Current epic | None — project complete for this specification |
+| Next steps | Optional future work (see README "Known limitations"): real payment gateway, email verification/password reset, Redis for rate limits + Socket.IO when scaling out, Playwright E2E suite. Nothing is deployed. |
 | Dev environment | Start Docker Desktop first (MongoDB runs in it). Dev servers: `cd server; npm run dev` and `cd client; npm run dev`. |
 
 To resume: `git status`, `git log --oneline -5`, read this file, run the checks in "Latest verified results", continue with the current epic.
@@ -29,7 +29,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `42ba9316cd5525248a7d17d675432a9210ee5cd4` | Epics 7 & 9 — payments, cancellations, refunds, booking history |
 | `40e0694674f5a9f8a0bcf81fe47c51f19604977e` | Epic 8 — real-time seat availability |
 | `34470dfb0c0e19ebf3b0ad713959f4e7e495e099` | Epic 10 — admin dashboard and management |
-| _(see `git log`)_ | Epic 11 — security, testing and optimisation |
+| `b9ebf5712bf86f98f1b09e5872be3b6031d07671` | Epic 11 — security, testing and optimisation |
+| _(see `git log`)_ | Epic 12 — deployment readiness and documentation |
 
 ## Epic overview
 
@@ -45,8 +46,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | 8 | Real-time seat availability (Socket.IO) | **Done** (`40e0694`) |
 | 9 | Customer dashboard and booking history | **Done** (delivered with Epic 7; account page from Epic 3) |
 | 10 | Admin dashboard | **Done** (`34470df`) |
-| 11 | Security, testing and optimization | **Done** |
-| 12 | Deployment and documentation | In progress |
+| 11 | Security, testing and optimization | **Done** (`b9ebf57`) |
+| 12 | Deployment and documentation | **Done** |
 
 ## Approved business decisions (confirmed by project owner, 2026-10-21)
 
@@ -59,6 +60,22 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | 5 | When an **admin cancels a showtime**, all affected bookings are **automatically cancelled** and **simulated refunds are recorded**. | Epics 5, 10 |
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
+
+## Epic 12 — deployment readiness and documentation (Done)
+
+**Added.** Optional `CLIENT_DIST_DIR`: the API serves the built React app from its own origin (strict page CSP:
+scripts only from self, `frame-ancestors 'none'`; hashed assets cached 1 year, `index.html` no-cache; SPA fallback
+that never swallows `/api` or `/socket.io`). This is the recommended production shape because the `SameSite=Strict`
+cookies, Origin check and WebSockets keep working unchanged. 4 new tests (`staticSite.test.js`).
+
+**Docs.** README rewritten: overview, features, tech stack, architecture + folder map, setup (incl. generating the JWT
+secret), env vars, admin bootstrap, running, demo walkthrough, tests, booking/payment/real-time design, API reference,
+security summary, deployment guide (Atlas + one Node service, HTTPS, `TRUST_PROXY`, scaling caveats — **nothing was
+deployed**), troubleshooting, known limitations. `.env.example` documents `CLIENT_DIST_DIR`.
+
+**Verified.** Built the client and ran the server with `NODE_ENV=production` on :5050 locally: pages and client-side
+routes load (Chrome, no console errors), CSP header present, live seat updates connect over the same origin,
+registration cookies are `HttpOnly; Secure; SameSite=Strict`. The temporary server was stopped afterwards.
 
 ## Epic 11 — security, testing and optimisation (Done)
 
@@ -329,12 +346,12 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 
 | Check | Command | Result |
 |---|---|---|
-| Backend tests | `cd server; npm test` | **185 passed**, 0 failed, 0 skipped |
+| Backend tests | `cd server; npm test` | **189 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
 | Frontend tests | `cd client; npm test` | **88 passed**, 0 failed |
 | Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
 | Dependency audit | `npm audit` (both) | 0 vulnerabilities |
-| Browser check | Chrome via browser integration | Customer journey, two-client real-time, admin flows, 390 px mobile layout verified |
+| Browser check | Chrome via browser integration | Customer journey, two-client real-time, admin flows, 390 px mobile layout, production-mode single-origin build verified |
 
 ## Architectural decisions
 

@@ -46,6 +46,13 @@ const schema = z
     // Number of reverse proxies in front of the API (needed for correct client IPs in rate limiting). 0 = none.
     TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
     RATE_LIMIT_ENABLED: booleanString.optional(),
+    // Optional: folder with the built React app (client/dist). When set, the API also serves the
+    // website from the same origin — the simplest production setup (see README "Deployment").
+    CLIENT_DIST_DIR: z
+      .string()
+      .min(1)
+      .refine((dir) => existsSync(dir), 'must be an existing folder (run `npm run build` in client/ first)')
+      .optional(),
   })
   .superRefine((vars, ctx) => {
     // The .env.example placeholder is long enough to pass the length check, so reject it explicitly.
@@ -106,6 +113,7 @@ export function loadEnv(source = process.env) {
     cookieSecure: vars.COOKIE_SECURE ?? vars.NODE_ENV === 'production',
     trustProxy: vars.TRUST_PROXY,
     rateLimitEnabled: vars.RATE_LIMIT_ENABLED ?? true,
+    clientDistDir: vars.CLIENT_DIST_DIR ?? null,
   });
 }
 
