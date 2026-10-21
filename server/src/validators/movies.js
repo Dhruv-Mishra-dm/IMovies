@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { GENRES, CERTIFICATIONS } from '../models/Movie.js';
 import { MOVIE_STATUS } from '../domain/statuses.js';
 import { objectId } from '../utils/validation.js';
+import { UNSAFE_URL_CHARS } from '../models/shared.js';
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -37,6 +38,7 @@ const imageUrl = z
   .max(500)
   .refine((v) => {
     if (v === '') return true;
+    if (UNSAFE_URL_CHARS.test(v)) return false; // quotes/brackets/spaces could break out of CSS url("…")
     if (/^\/[a-z0-9/_.-]+$/i.test(v) && !v.includes('..')) return true;
     try {
       return new URL(v).protocol === 'https:';

@@ -29,6 +29,12 @@ function toAppError(err) {
     const fields = Object.keys(err.keyPattern ?? {});
     return new AppError(409, 'DUPLICATE', 'A record with the same details already exists', fields.length ? { fields } : undefined);
   }
+  // Other client errors raised by libraries (e.g. Express: a URL parameter with broken %-encoding has
+  // status 400). Keep their 4xx status, but use a generic message rather than the library's wording.
+  const status = err.status ?? err.statusCode;
+  if (Number.isInteger(status) && status >= 400 && status < 500) {
+    return new AppError(status, 'BAD_REQUEST', 'The request could not be understood');
+  }
   return null;
 }
 

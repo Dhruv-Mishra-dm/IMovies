@@ -25,6 +25,19 @@ export class FakeSocket {
     return this
   }
 
+  disconnect() {
+    this.connected = false
+    this.disconnects = (this.disconnects ?? 0) + 1
+    return this
+  }
+
+  connect() {
+    this.connected = true
+    this.connects = (this.connects ?? 0) + 1
+    for (const fn of this.handlers.get('connect') ?? []) fn()
+    return this
+  }
+
   /** Simulates the server sending `event`. */
   serverSends(event, payload) {
     for (const fn of this.handlers.get(event) ?? []) fn(payload)
@@ -35,6 +48,8 @@ export class FakeSocket {
     this.emitted = []
     this.connected = true
     this.joinReply = { ok: true }
+    this.connects = 0
+    this.disconnects = 0
   }
 }
 

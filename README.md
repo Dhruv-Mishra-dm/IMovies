@@ -328,6 +328,42 @@ Rules (approved decisions 2, 4, 5) and safety guarantees:
 - **Recovery jobs** (every 15 s): expire holds, mark interrupted payments as failed, retry
   refunds the provider failed, resume interrupted show cancellations.
 
+## Security summary
+
+Implemented (each has automated tests in `server/tests/` — see `security.test.js`, `auth.test.js`,
+`bookings.test.js`, `payments.test.js`, `realtime.test.js`):
+
+| Area | Control |
+|---|---|
+| Passwords | bcrypt (cost 12; 72-byte limit enforced), never returned or logged |
+| Sessions | httpOnly + `SameSite=Strict` cookies, `Secure` in production; 15-min access JWT (HS256 pinned, issuer/audience checked); rotating 7-day refresh tokens stored hashed, replay revokes the family; `tokenVersion` for log-out-everywhere |
+| CSRF / CORS | Origin check on every state-changing request; CORS allows only `CLIENT_ORIGIN`; Socket.IO accepts only that origin |
+| Authorization | Roles re-read from the database on every request; admin routers guarded server-side; other customers' bookings return 404 (no id probing); registration can't set a role |
+| Input | zod validation on params/query/body; unknown fields dropped (mass assignment); operator objects rejected (NoSQL injection); query strings can't carry objects; 100 KB body limit; malformed URLs → 400 |
+| XSS | React escapes output; no `dangerouslySetInnerHTML`; image URLs limited to https/site paths without quote/bracket/space characters; trailer links https only and opened with `noopener noreferrer` |
+| Abuse | Rate limits on login, registration, refresh, booking and payment |
+| Money & seats | Prices/totals/outcomes decided by the server; unique indexes + transactions prevent double booking, double charge and double refund |
+| Errors & logs | Uniform error bodies, no stack traces; structured logs with request ids; passwords, tokens and cookies redacted |
+| Headers | helmet (CSP, HSTS, nosniff, frame options) on API responses |
+| Dependencies | `npm audit` → 0 known vulnerabilities in both apps (checked 2026-10-21) |
+
+Residual risks / not covered (be aware before any real deployment):
+
+- **Payments are simulated.** A real gateway needs webhook signature verification, capture
+  retries and reconciliation.
+- **Rate limits are in-memory**, so they reset on restart and don't work across several server
+  instances (use a shared store such as Redis).
+- **Registration reveals whether an email is already registered**; there's no email verification
+  or password reset.
+- **The frontend's own security headers (CSP etc.) must be set by whatever hosts the built files**
+  (see Deployment).
+- **XSS remains the main risk for cookie sessions.** A script running in the page can't read the
+  cookies, but it could send requests as the user.
+- **The 10-second refresh-race grace window** means a stolen refresh token replayed within 10 s of
+  its legitimate use isn't detected as reuse.
+- **No automated end-to-end browser test suite** (Playwright) is included; browser checks during
+  development were manual (see `docs/STATUS.md`).
+
 ## Administration
 
 Log in with an administrator account (see "Creating an administrator") and use the **Admin**

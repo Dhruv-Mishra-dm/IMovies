@@ -5,7 +5,8 @@
   padding: 0;
   display: grid;
   gap: var(--space-5) var(--space-4);
-  grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 42vw), 1fr));
+  /* At least two columns on phones: each column is at most half the container minus half the gap. */
+  grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, calc(50% - var(--space-4) / 2)), 1fr));
 }
 .movie-card-link {
   display: block;

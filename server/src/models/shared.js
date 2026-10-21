@@ -12,9 +12,13 @@ export const jsonOptions = {
 
 export const schemaOptions = { timestamps: true, toJSON: jsonOptions, toObject: jsonOptions };
 
+// Characters that could break out of a CSS url("…") or an HTML attribute; never needed in real image URLs.
+export const UNSAFE_URL_CHARS = /["'()<>\\\s`]/;
+
 /** Image URLs: either https://… or a site-relative path such as /posters/x.svg (bundled with the client). */
 export function isImageUrl(value) {
   if (value === undefined || value === null || value === '') return true;
+  if (UNSAFE_URL_CHARS.test(value)) return false;
   if (/^\/[a-z0-9/_.-]+$/i.test(value) && !value.includes('..')) return true;
   try {
     return new URL(value).protocol === 'https:';

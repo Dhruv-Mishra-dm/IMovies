@@ -166,6 +166,19 @@ describe('route guards and navigation', () => {
     await waitFor(() => expect(location()).toBe('/'))
   })
 
+  it('reconnects the real-time socket when the logged-in user changes, so personal events reach the right person', async () => {
+    const { fakeSocket } = await import('../test/fakeSocket.js')
+    anonymous()
+    authApi.login.mockResolvedValue(ok({ user: customer }))
+    renderApp('/login')
+    await userEvent.type(await screen.findByLabelText('Email'), 'asha@example.test')
+    await userEvent.type(screen.getByLabelText('Password'), 'secret123')
+    expect(fakeSocket.connects).toBe(0)
+    await userEvent.click(screen.getByRole('button', { name: 'Log in' }))
+    await waitFor(() => expect(fakeSocket.connects).toBe(1))
+    expect(fakeSocket.disconnects).toBe(1)
+  })
+
   it('shows a not-found page for unknown URLs', async () => {
     anonymous()
     renderApp('/no-such-page')

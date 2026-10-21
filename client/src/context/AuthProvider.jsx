@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'react-toastify'
 import * as authApi from '../api/auth.js'
 import { SESSION_EXPIRED_EVENT } from '../api/client.js'
+import { getSocket } from '../api/socket.js'
 import { AuthContext } from './authContext.js'
 
 /**
@@ -24,6 +25,23 @@ export default function AuthProvider({ children }) {
     )
     return () => controller.abort()
   }, [setUser])
+
+  // The real-time socket identifies the user once, when it connects. When the logged-in user changes
+  // (login, logout, session expiry), reconnect it so the server sees the new identity: personal events
+  // then reach the right person, and a logged-out browser leaves the previous user's private room.
+  const userId = state.user?.id ?? null
+  const previousUserId = useRef(undefined)
+  useEffect(() => {
+    if (state.status === 'loading') return
+    if (previousUserId.current !== undefined && previousUserId.current !== userId) {
+      const socket = getSocket()
+      if (socket.connected) {
+        socket.disconnect()
+        socket.connect()
+      }
+    }
+    previousUserId.current = userId
+  }, [userId, state.status])
 
   useEffect(() => {
     const onExpired = () => {

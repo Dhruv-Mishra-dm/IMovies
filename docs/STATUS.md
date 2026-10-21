@@ -8,9 +8,9 @@ Only features whose acceptance criteria are verified are marked **Done**.
 | Item | Value |
 |---|---|
 | Branch | `main` |
-| Last completed epic | Epic 10 — admin dashboard and management UI |
-| Current epic | Epic 11 — security, testing and optimisation |
-| Next steps | Security review against the spec's checklist, `npm audit` (both apps), mobile/responsive check, production hardening (CSP for static hosting, `trust proxy`), any defects found. Then Epic 12 (final README/deployment guide, `.env.example`, troubleshooting). |
+| Last completed epic | Epic 11 — security, testing and optimisation |
+| Current epic | Epic 12 — deployment readiness and documentation |
+| Next steps | README: full overview/features/architecture, deployment guide (hosting options, CSP for the static frontend, HTTPS/cookies, `TRUST_PROXY`, Socket.IO hosting caveats, MongoDB Atlas/replica set), troubleshooting, known limitations; verify setup instructions from a clean clone; final report. |
 | Dev environment | Start Docker Desktop first (MongoDB runs in it). Dev servers: `cd server; npm run dev` and `cd client; npm run dev`. |
 
 To resume: `git status`, `git log --oneline -5`, read this file, run the checks in "Latest verified results", continue with the current epic.
@@ -28,7 +28,8 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | `0005a059691b0a7b9d7c6cafc3bc07034ba0aa0b` | Epic 6 — seat inventory and booking engine |
 | `42ba9316cd5525248a7d17d675432a9210ee5cd4` | Epics 7 & 9 — payments, cancellations, refunds, booking history |
 | `40e0694674f5a9f8a0bcf81fe47c51f19604977e` | Epic 8 — real-time seat availability |
-| _(see `git log`)_ | Epic 10 — admin dashboard and management |
+| `34470dfb0c0e19ebf3b0ad713959f4e7e495e099` | Epic 10 — admin dashboard and management |
+| _(see `git log`)_ | Epic 11 — security, testing and optimisation |
 
 ## Epic overview
 
@@ -43,9 +44,9 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | 7 | Payment simulation and booking confirmation (+ cancellations, refunds, admin show cancellation API) | **Done** (`42ba931`) |
 | 8 | Real-time seat availability (Socket.IO) | **Done** (`40e0694`) |
 | 9 | Customer dashboard and booking history | **Done** (delivered with Epic 7; account page from Epic 3) |
-| 10 | Admin dashboard | **Done** |
-| 11 | Security, testing and optimization | In progress |
-| 12 | Deployment and documentation | Pending |
+| 10 | Admin dashboard | **Done** (`34470df`) |
+| 11 | Security, testing and optimization | **Done** |
+| 12 | Deployment and documentation | In progress |
 
 ## Approved business decisions (confirmed by project owner, 2026-10-21)
 
@@ -58,6 +59,33 @@ To resume: `git status`, `git log --oneline -5`, read this file, run the checks 
 | 5 | When an **admin cancels a showtime**, all affected bookings are **automatically cancelled** and **simulated refunds are recorded**. | Epics 5, 10 |
 
 These are code constants in `server/src/config/business.js` (not environment variables), so configuration can't silently change them.
+
+## Epic 11 — security, testing and optimisation (Done)
+
+**Review.** Checked against the spec's list (secrets, cookies, authorization, IDOR, NoSQL injection, XSS, CSRF, CORS,
+validation, logging, error messages, admin operations, races, payment/cancellation transitions, URL handling,
+dependencies). Results: no secret patterns in any commit and no `.env` ever committed; no unsafe HTML rendering;
+`npm audit` 0 vulnerabilities (server and client). Summary table and residual risks are in README "Security summary".
+
+**Defects found and fixed.**
+1. Socket identity went stale after login/logout (anonymous socket kept after logging in → missed personal events;
+   previous user's room kept after logout) → `AuthProvider` reconnects the socket when the user changes.
+2. Image URLs could contain quotes/brackets and break out of CSS `url("…")` → rejected server-side
+   (`UNSAFE_URL_CHARS` in model + validator).
+3. Malformed %-encoding in URL parameters returned 500 → library 4xx errors now map to `400 BAD_REQUEST`.
+4. Movie grid was one column on phones (2 × 42vw + gap overflowed by ~1 px) → column size based on the container.
+
+**Verified.** Server 185 tests (9 new security probes: query-string operator injection can't widen filters, JSON
+operator objects rejected on login, CSS/HTML-breaking and javascript:/data: image URLs rejected, foreign-origin
+preflight gets no CORS headers, forged cross-site logout-all refused while the session survives, helmet headers,
+malformed URLs → 400 without internals, every admin endpoint 403 for customers, no self-promotion to admin). Client
+88 tests (1 new: socket reconnects on login). **Mobile (390 px frames in Chrome):** home, movies, seat map and admin
+showtimes have no horizontal overflow; the menu toggle opens the navigation; seat map and admin tables scroll inside
+their own containers; movie grid shows 2 columns.
+
+**Performance notes.** Indexes match the actual queries (Epic 2); list endpoints return trimmed fields and are
+paginated; admin pages are separate lazy-loaded chunks; posters load lazily with fixed aspect ratios; Socket.IO rooms
+are per show. Not done (not needed at this scale): caching, CDN, Redis.
 
 ## Epic 10 — admin dashboard and management (Done)
 
@@ -301,11 +329,12 @@ writable, fail-fast DB, graceful shutdown, axios client wrapper with timeout, Vi
 
 | Check | Command | Result |
 |---|---|---|
-| Backend tests | `cd server; npm test` | **176 passed**, 0 failed, 0 skipped |
+| Backend tests | `cd server; npm test` | **185 passed**, 0 failed, 0 skipped |
 | Backend lint | `cd server; npm run lint` | 0 problems |
-| Frontend tests | `cd client; npm test` | **87 passed**, 0 failed |
+| Frontend tests | `cd client; npm test` | **88 passed**, 0 failed |
 | Frontend lint / build | `cd client; npm run lint; npm run build` | 0 problems / passed |
-| Browser check | Chrome via browser integration | Full customer journey + two-client real-time verified; mobile width not verified |
+| Dependency audit | `npm audit` (both) | 0 vulnerabilities |
+| Browser check | Chrome via browser integration | Customer journey, two-client real-time, admin flows, 390 px mobile layout verified |
 
 ## Architectural decisions
 
